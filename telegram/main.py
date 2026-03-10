@@ -607,8 +607,8 @@ async def main():
         log_message("🔐 Using string session")
         client = TelegramClient(StringSession(STRING_SESSION), API_ID, API_HASH)
     else:
-        print("📁 Using file session: session_pocket_option_vip_20260310_155330.session")
-        client = TelegramClient('session_pocket_option_vip_20260310_155330', API_ID, API_HASH)
+        print("📁 Using file session: session_pocket_option_vip.session")
+        client = TelegramClient('session_pocket_option_vip', API_ID, API_HASH)
     
     try:
         await client.start(PHONE_NUMBER)

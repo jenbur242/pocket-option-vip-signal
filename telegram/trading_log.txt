@@ -397,3 +397,131 @@ Step 7: $   3051.76
 🔔 NEW MESSAGE from [Pocket Option Free Vip signals]: GBPCAD
 
 🔔 NEW MESSAGE from [Pocket Option Free Vip signals]: B
+
+============================================================
+🤖 POCKET OPTION TRADING BOT
+============================================================
+Channels: 1 channels
+  - Pocket Option Signals VIP (ID: None)
+Account: DEMO
+TRADE_AMOUNT (raw): 5.0
+Initial Amount: $5.0
+Multiplier: 2.5x
+============================================================
+
+============================================================
+📊 MARTINGALE AMOUNT TABLE (8 Steps)
+============================================================
+Step 0: $      5.00
+Step 1: $     12.50
+Step 2: $     31.25
+Step 3: $     78.12
+Step 4: $    195.31
+Step 5: $    488.28
+Step 6: $   1220.70
+Step 7: $   3051.76
+============================================================
+
+🔌 Connecting to PocketOption...
+💰 Balance: $48648.89 USD
+✅ Connected to PocketOption!
+✅ Connected to: Pocket Option Free Vip signals
+📊 Monitoring 1 channel(s)
+📊 Found 50 recent messages across all channels
+🧹 Started automatic stale trade cleanup (every 60s)
+
+⏳ Waiting for signals from ALL channels...
+
+
+============================================================
+🤖 POCKET OPTION TRADING BOT
+============================================================
+Channels: 1 channels
+  - Pocket Option Signals VIP (ID: None)
+Account: DEMO
+TRADE_AMOUNT (raw): 5.0
+Initial Amount: $5.0
+Multiplier: 2.5x
+============================================================
+
+============================================================
+📊 MARTINGALE AMOUNT TABLE (8 Steps)
+============================================================
+Step 0: $      5.00
+Step 1: $     12.50
+Step 2: $     31.25
+Step 3: $     78.12
+Step 4: $    195.31
+Step 5: $    488.28
+Step 6: $   1220.70
+Step 7: $   3051.76
+============================================================
+
+🔌 Connecting to PocketOption...
+💰 Balance: $48548.89 USD
+✅ Connected to PocketOption!
+❌ Telegram connection error: database is locked
+
+============================================================
+🤖 POCKET OPTION TRADING BOT
+============================================================
+Channels: 1 channels
+  - Pocket Option Signals VIP (ID: None)
+Account: DEMO
+TRADE_AMOUNT (raw): 5.0
+Initial Amount: $5.0
+Multiplier: 2.5x
+============================================================
+
+============================================================
+📊 MARTINGALE AMOUNT TABLE (8 Steps)
+============================================================
+Step 0: $      5.00
+Step 1: $     12.50
+Step 2: $     31.25
+Step 3: $     78.12
+Step 4: $    195.31
+Step 5: $    488.28
+Step 6: $   1220.70
+Step 7: $   3051.76
+============================================================
+
+🔌 Connecting to PocketOption...
+💰 Balance: $48640.89 USD
+✅ Connected to PocketOption!
+
+============================================================
+🤖 POCKET OPTION TRADING BOT
+============================================================
+Channels: 1 channels
+  - Pocket Option Signals VIP (ID: None)
+Account: DEMO
+TRADE_AMOUNT (raw): 5.0
+Initial Amount: $5.0
+Multiplier: 2.5x
+============================================================
+
+============================================================
+📊 MARTINGALE AMOUNT TABLE (8 Steps)
+============================================================
+Step 0: $      5.00
+Step 1: $     12.50
+Step 2: $     31.25
+Step 3: $     78.12
+Step 4: $    195.31
+Step 5: $    488.28
+Step 6: $   1220.70
+Step 7: $   3051.76
+============================================================
+
+🔌 Connecting to PocketOption...
+✅ Connected to: Pocket Option Free Vip signals
+📊 Monitoring 1 channel(s)
+📊 Found 50 recent messages across all channels
+🧹 Started automatic stale trade cleanup (every 60s)
+
+⏳ Waiting for signals from ALL channels...
+
+💰 Balance: $48640.89 USD
+✅ Connected to PocketOption!
+❌ Telegram connection error: database is locked
