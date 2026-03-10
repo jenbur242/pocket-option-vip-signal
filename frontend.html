@@ -1,0 +1,2468 @@
+<!DOCTYPE html>
+<html class="dark" lang="en">
+<head>
+    <meta charset="utf-8"/>
+    <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+    <title>Deep Space | Pocket Option Trading Bot</title>
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+    <script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#3b82f6",
+                        "success": "#10b981",
+                        "danger": "#e11d48",
+                        "background-light": "#f8f6f6",
+                        "background-dark": "#0a0f18",
+                        "surface": "#161e2d",
+                        "border-muted": "#1e293b"
+                    },
+                    fontFamily: {
+                        "display": ["Public Sans", "sans-serif"]
+                    },
+                    borderRadius: {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "2xl": "1rem",
+                        "full": "9999px"
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        .glass-card {
+            background: rgba(22, 30, 45, 0.7);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+        .glow-primary {
+            box-shadow: 0 0 15px rgba(59, 130, 246, 0.3);
+        }
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 4px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #1e293b;
+            border-radius: 10px;
+        }
+    </style>
+</head>
+<body class="bg-background-light dark:bg-background-dark font-display text-slate-900 dark:text-slate-100 antialiased overflow-hidden">
+    <div class="flex h-screen w-full">
+        <!-- Sidebar -->
+        <aside class="w-20 lg:w-64 flex flex-col bg-surface border-r border-border-muted transition-all duration-300">
+            <div class="p-6 flex items-center gap-3">
+                <div class="bg-primary rounded-xl p-2 flex items-center justify-center glow-primary">
+                    <span class="material-symbols-outlined text-white">rocket_launch</span>
+                </div>
+                <div class="hidden lg:block">
+                    <h1 class="font-bold text-lg tracking-tight">Deep Space</h1>
+                    <p class="text-xs text-slate-400 font-medium uppercase tracking-widest">Enterprise V2</p>
+                </div>
+            </div>
+            
+            <nav class="flex-1 px-4 space-y-2 mt-4">
+                <a class="flex items-center gap-4 px-4 py-3 bg-primary/10 text-primary rounded-xl group" href="#" onclick="showSection('dashboard'); return false;">
+                    <span class="material-symbols-outlined fill-1">dashboard</span>
+                    <span class="hidden lg:block font-semibold">Dashboard</span>
+                </a>
+                <a class="flex items-center gap-4 px-4 py-3 text-slate-400 hover:bg-slate-800 hover:text-slate-100 rounded-xl transition-all" href="#" onclick="showSection('config'); return false;">
+                    <span class="material-symbols-outlined">settings</span>
+                    <span class="hidden lg:block font-medium">Configuration</span>
+                </a>
+                <a class="flex items-center gap-4 px-4 py-3 text-slate-400 hover:bg-slate-800 hover:text-slate-100 rounded-xl transition-all" href="#" onclick="showSection('history'); return false;">
+                    <span class="material-symbols-outlined">history_edu</span>
+                    <span class="hidden lg:block font-medium">History</span>
+                </a>
+                <a class="flex items-center gap-4 px-4 py-3 text-slate-400 hover:bg-slate-800 hover:text-slate-100 rounded-xl transition-all" href="#" onclick="showSection('signals'); return false;">
+                    <span class="material-symbols-outlined">electric_bolt</span>
+                    <span class="hidden lg:block font-medium">Signals</span>
+                </a>
+            </nav>
+            
+            <div class="p-4 border-t border-border-muted">
+                <div class="flex items-center gap-3 p-2 rounded-xl hover:bg-slate-800 cursor-pointer">
+                    <div class="size-10 rounded-full border-2 border-primary/20 bg-primary/10 flex items-center justify-center">
+                        <span class="material-symbols-outlined text-primary">person</span>
+                    </div>
+                    <div class="hidden lg:block overflow-hidden">
+                        <p class="text-sm font-bold truncate">Trader</p>
+                        <p class="text-xs text-slate-400 truncate">Pro Account</p>
+                    </div>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="flex-1 flex flex-col overflow-hidden">
+            <!-- Header -->
+            <header class="h-20 flex items-center justify-between px-8 border-b border-border-muted bg-surface/50 backdrop-blur-md">
+                <div class="flex items-center gap-4">
+                    <div class="flex flex-col">
+                        <h2 class="text-xl font-bold">Pocket Option Terminal</h2>
+                        <div class="flex items-center gap-2">
+                            <span id="connectionStatus" class="flex size-2 rounded-full bg-slate-500"></span>
+                            <span id="connectionText" class="text-xs text-slate-500 font-semibold">CONNECTING...</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="flex items-center gap-6">
+                    <div class="hidden md:flex bg-slate-800/50 border border-border-muted rounded-xl px-4 py-2 gap-4">
+                        <div class="flex flex-col border-r border-border-muted pr-4">
+                            <span class="text-[10px] text-slate-400 uppercase font-bold">Demo Balance</span>
+                            <span class="text-sm font-bold" id="demoBalance">$0.00</span>
+                        </div>
+                        <div class="flex flex-col">
+                            <span class="text-[10px] text-slate-400 uppercase font-bold">Real Balance</span>
+                            <span class="text-sm font-bold text-success" id="realBalance">$0.00</span>
+                        </div>
+                        <button id="refreshBalanceBtn" onclick="refreshBalance()" class="ml-2 p-1 text-slate-400 hover:text-primary transition-colors" title="Refresh Balance (20-35s)">
+                            <span class="material-symbols-outlined text-sm">refresh</span>
+                        </button>
+                    </div>
+                    
+                    <div class="flex items-center gap-2">
+                        <button class="p-2 text-slate-400 hover:text-white transition-colors relative" onclick="showNotifications()">
+                            <span class="material-symbols-outlined">notifications</span>
+                            <span id="notificationBadge" class="hidden absolute top-2 right-2 size-2 bg-danger rounded-full border-2 border-background-dark"></span>
+                        </button>
+                        <button class="p-2 text-slate-400 hover:text-white transition-colors">
+                            <span class="material-symbols-outlined">wallet</span>
+                        </button>
+                    </div>
+                </div>
+            </header>
+            
+            <!-- Alert Container -->
+            <div id="alertContainer" class="fixed top-24 right-8 z-50 space-y-2 max-w-md"></div>
+
+            <!-- Dashboard Body -->
+            <div class="flex-1 overflow-y-auto p-8 custom-scrollbar">
+                <!-- Dashboard Section -->
+                <div id="dashboardSection" class="section-content">
+                    <!-- Stats Grid -->
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+                        <div class="glass-card p-6 rounded-2xl relative overflow-hidden group">
+                            <div class="flex justify-between items-start mb-4">
+                                <div>
+                                    <p class="text-slate-400 text-sm font-medium">Total Profit</p>
+                                    <h3 class="text-2xl font-bold mt-1" id="totalProfit">$0.00</h3>
+                                </div>
+                                <span class="material-symbols-outlined text-success bg-success/10 p-2 rounded-lg">trending_up</span>
+                            </div>
+                            <div class="flex items-center gap-2 text-xs">
+                                <span class="text-success font-bold" id="profitChange">+0%</span>
+                                <span class="text-slate-500">vs last session</span>
+                            </div>
+                            <div class="absolute bottom-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-success/20 to-transparent"></div>
+                        </div>
+                        
+                        <div class="glass-card p-6 rounded-2xl relative overflow-hidden group">
+                            <div class="flex justify-between items-start mb-4">
+                                <div>
+                                    <p class="text-slate-400 text-sm font-medium">Win Rate</p>
+                                    <h3 class="text-2xl font-bold mt-1" id="winRate">0%</h3>
+                                </div>
+                                <span class="material-symbols-outlined text-primary bg-primary/10 p-2 rounded-lg">speed</span>
+                            </div>
+                            <div class="flex items-center gap-2 text-xs">
+                                <span class="text-primary font-bold" id="winRateChange">--</span>
+                                <span class="text-slate-500">Stability</span>
+                            </div>
+                            <div class="absolute bottom-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-primary/20 to-transparent"></div>
+                        </div>
+                        
+                        <div class="glass-card p-6 rounded-2xl relative overflow-hidden group">
+                            <div class="flex justify-between items-start mb-4">
+                                <div>
+                                    <p class="text-slate-400 text-sm font-medium">Total Trades</p>
+                                    <h3 class="text-2xl font-bold mt-1" id="totalTrades">0</h3>
+                                </div>
+                                <span class="material-symbols-outlined text-slate-400 bg-slate-400/10 p-2 rounded-lg">sensors</span>
+                            </div>
+                            <div class="flex items-center gap-2 text-xs">
+                                <span class="text-slate-400 font-bold" id="tradesStatus">Idle</span>
+                                <span class="text-slate-500">Status</span>
+                            </div>
+                            <div class="absolute bottom-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-slate-400/20 to-transparent"></div>
+                        </div>
+                        
+                        <div class="glass-card p-6 rounded-2xl relative overflow-hidden group">
+                            <div class="flex justify-between items-start mb-4">
+                                <div>
+                                    <p class="text-slate-400 text-sm font-medium">Current Step</p>
+                                    <h3 class="text-2xl font-bold mt-1" id="currentStep">0</h3>
+                                </div>
+                                <span class="material-symbols-outlined text-danger bg-danger/10 p-2 rounded-lg">layers</span>
+                            </div>
+                            <div class="flex items-center gap-2 text-xs">
+                                <span class="text-slate-400 font-bold" id="stepStatus">Ready</span>
+                                <span class="text-slate-500">Martingale</span>
+                            </div>
+                            <div class="absolute bottom-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-danger/20 to-transparent"></div>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 xl:grid-cols-12 gap-8">
+                        <!-- Trading Console -->
+                        <div class="xl:col-span-8 flex flex-col gap-8">
+                            <div class="glass-card rounded-2xl p-8">
+                                <div class="flex items-center justify-between mb-8">
+                                    <h4 class="text-lg font-bold flex items-center gap-2">
+                                        <span class="material-symbols-outlined text-primary">tune</span>
+                                        Bot Configuration
+                                    </h4>
+                                    <div class="flex gap-2">
+                                        <span id="accountTypeBadge" class="px-3 py-1 rounded-full bg-slate-800 text-xs font-bold border border-border-muted">DEMO</span>
+                                        <span id="botStatusBadge" class="px-3 py-1 rounded-full bg-slate-800 text-xs font-bold border border-border-muted">STOPPED</span>
+                                    </div>
+                                </div>
+                                
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
+                                    <div class="space-y-6">
+                                        <div class="space-y-2">
+                                            <div class="flex justify-between items-center">
+                                                <label class="text-sm font-bold text-slate-400 uppercase tracking-wider">Stake Amount</label>
+                                                <span class="text-primary font-bold" id="stakeDisplay">$1.00</span>
+                                            </div>
+                                            <input id="initialAmount" class="w-full h-2 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-primary" max="1000" min="0.1" step="0.1" type="range" value="1.0" oninput="updateStakeDisplay()"/>
+                                            <div class="flex justify-between text-[10px] text-slate-500 font-bold">
+                                                <span>MIN $0.1</span>
+                                                <span>MAX $1,000</span>
+                                            </div>
+                                        </div>
+                                        
+                                        <div class="space-y-2">
+                                            <div class="flex justify-between items-center">
+                                                <label class="text-sm font-bold text-slate-400 uppercase tracking-wider">Martingale Mult.</label>
+                                                <span class="text-primary font-bold" id="multiplierDisplay">2.5x</span>
+                                            </div>
+                                            <input id="multiplier" class="w-full h-2 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-primary" max="5" min="1.1" step="0.1" type="range" value="2.5" oninput="updateMultiplierDisplay()"/>
+                                            <div class="flex justify-between text-[10px] text-slate-500 font-bold">
+                                                <span>1.1x</span>
+                                                <span>5.0x</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="grid grid-cols-2 gap-4">
+                                        <div class="space-y-2">
+                                            <label class="text-sm font-bold text-slate-400 uppercase tracking-wider">Account Type</label>
+                                            <select id="accountType" class="w-full bg-slate-800 border-border-muted rounded-xl text-sm focus:ring-primary focus:border-primary transition-all" onchange="updateAccountBadge()">
+                                                <option value="true">Demo</option>
+                                                <option value="false">Real</option>
+                                            </select>
+                                        </div>
+                                        
+                                        <div class="space-y-2">
+                                            <label class="text-sm font-bold text-slate-400 uppercase tracking-wider">Starting Step</label>
+                                            <input id="martingaleStep" class="w-full bg-slate-800 border-border-muted rounded-xl text-sm" type="number" min="0" max="8" value="0" oninput="updateMartingalePreview()"/>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <!-- Trading Toggle Switch -->
+                                <div class="flex items-center justify-between p-6 bg-slate-800/50 rounded-xl border border-border-muted">
+                                    <div class="flex items-center gap-4">
+                                        <div class="p-3 bg-primary/10 rounded-lg">
+                                            <span class="material-symbols-outlined text-primary">power_settings_new</span>
+                                        </div>
+                                        <div>
+                                            <h5 class="font-bold text-lg flex items-center gap-2">
+                                                Trading Bot
+                                                <span id="tradingModeBadge" class="px-2 py-1 rounded-lg bg-success/20 text-success text-xs font-bold">ALWAYS ON</span>
+                                            </h5>
+                                            <p class="text-xs text-slate-400" id="tradingStatusText">Bot runs continuously and monitors signals 24/7</p>
+                                        </div>
+                                    </div>
+                                    
+                                    <!-- Status Indicator (no toggle) -->
+                                    <div class="flex items-center gap-2">
+                                        <div class="w-3 h-3 bg-success rounded-full animate-pulse"></div>
+                                        <span class="text-sm font-bold text-success">ACTIVE</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Trade History Table -->
+                            <div class="glass-card rounded-2xl overflow-hidden">
+                                <div class="p-6 border-b border-border-muted flex justify-between items-center">
+                                    <h4 class="font-bold flex items-center gap-2">
+                                        <span class="material-symbols-outlined text-primary">list_alt</span>
+                                        Recent Activity
+                                    </h4>
+                                    <button onclick="loadCsvFiles()" class="text-xs text-primary font-bold hover:underline">View All History</button>
+                                </div>
+                                <div class="overflow-x-auto">
+                                    <table class="w-full text-left">
+                                        <thead class="bg-slate-800/50 text-[10px] uppercase font-bold text-slate-400">
+                                            <tr>
+                                                <th class="px-6 py-4">Asset</th>
+                                                <th class="px-6 py-4">Time</th>
+                                                <th class="px-6 py-4">Type</th>
+                                                <th class="px-6 py-4">Amount</th>
+                                                <th class="px-6 py-4">Step</th>
+                                                <th class="px-6 py-4">Status</th>
+                                                <th class="px-6 py-4 text-right">Profit</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="tradesTableBody" class="divide-y divide-border-muted">
+                                            <tr>
+                                                <td colspan="7" class="px-6 py-8 text-center text-slate-500">
+                                                    <span class="material-symbols-outlined text-4xl mb-2 opacity-30">inbox</span>
+                                                    <p>No trades yet. Start the bot to begin trading.</p>
+                                                </td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+
+                            <!-- Live System Logs -->
+                            <div class="glass-card rounded-2xl overflow-hidden">
+                                <div class="p-6 border-b border-border-muted flex justify-between items-center">
+                                    <h4 class="font-bold flex items-center gap-2">
+                                        <span class="material-symbols-outlined text-primary">terminal</span>
+                                        Live System Logs
+                                    </h4>
+                                    <button onclick="clearLogs()" class="text-xs text-danger font-bold hover:underline">Clear Logs</button>
+                                </div>
+                                <div id="systemLogs" class="bg-slate-950 p-4 h-64 overflow-y-auto custom-scrollbar font-mono text-xs space-y-1">
+                                    <div class="text-slate-500">System initialized. Waiting for activity...</div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Right Sidebar Widgets -->
+                        <div class="xl:col-span-4 flex flex-col gap-8">
+                            <!-- Account Info -->
+                            <div class="glass-card rounded-2xl p-6">
+                                <h4 class="text-sm font-bold text-slate-400 uppercase tracking-widest mb-4">Account Information</h4>
+                                <div class="space-y-3">
+                                    <div class="flex justify-between items-center p-3 bg-slate-800/50 rounded-lg">
+                                        <span class="text-sm text-slate-400">Account Type</span>
+                                        <span id="accountTypeDisplay" class="font-bold text-primary">DEMO</span>
+                                    </div>
+                                    <div class="flex justify-between items-center p-3 bg-slate-800/50 rounded-lg">
+                                        <span class="text-sm text-slate-400">Current Balance</span>
+                                        <span id="currentBalanceDisplay" class="font-bold text-success">$0.00</span>
+                                    </div>
+                                    
+                                    <!-- Editable Trade Amount -->
+                                    <div class="p-3 bg-slate-800/50 rounded-lg">
+                                        <label class="text-sm text-slate-400 block mb-2">Trade Amount</label>
+                                        <div class="flex items-center gap-2">
+                                            <span class="text-slate-400">$</span>
+                                            <input 
+                                                type="number" 
+                                                id="quickTradeAmount" 
+                                                class="flex-1 bg-slate-900 border border-border-muted rounded-lg px-3 py-2 text-white font-bold focus:ring-2 focus:ring-primary focus:border-primary transition-all" 
+                                                value="1.00" 
+                                                step="0.1" 
+                                                min="0.1"
+                                                oninput="syncTradeAmount()"
+                                            />
+                                        </div>
+                                    </div>
+                                    
+                                    <!-- Editable Multiplier -->
+                                    <div class="p-3 bg-slate-800/50 rounded-lg">
+                                        <label class="text-sm text-slate-400 block mb-2">Multiplier</label>
+                                        <div class="flex items-center gap-2">
+                                            <input 
+                                                type="number" 
+                                                id="quickMultiplier" 
+                                                class="flex-1 bg-slate-900 border border-border-muted rounded-lg px-3 py-2 text-white font-bold focus:ring-2 focus:ring-primary focus:border-primary transition-all" 
+                                                value="2.5" 
+                                                step="0.1" 
+                                                min="1.1"
+                                                oninput="syncMultiplier()"
+                                            />
+                                            <span class="text-slate-400">x</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Martingale Sequence -->
+                            <div class="glass-card rounded-2xl p-6">
+                                <h4 class="text-sm font-bold text-slate-400 uppercase tracking-widest mb-6">Martingale Preview</h4>
+                                <div id="martingalePreview" class="space-y-4">
+                                    <!-- Will be populated by JavaScript -->
+                                </div>
+                            </div>
+                            
+                            <!-- Strategy Health -->
+                            <div class="glass-card rounded-2xl p-6">
+                                <h4 class="text-sm font-bold text-slate-400 uppercase tracking-widest mb-4">System Status</h4>
+                                <div class="space-y-4">
+                                    <div class="flex items-center justify-between text-xs mb-1">
+                                        <span class="font-medium">Bot Connection</span>
+                                        <span id="botHealthStatus" class="text-slate-500">Idle</span>
+                                    </div>
+                                    <div class="w-full h-2 bg-slate-800 rounded-full overflow-hidden">
+                                        <div id="botHealthBar" class="h-full bg-slate-600 w-[0%] transition-all duration-500"></div>
+                                    </div>
+                                    
+                                    <div class="flex items-center justify-between text-xs mb-1">
+                                        <span class="font-medium">Win Rate Score</span>
+                                        <span id="winRateScore" class="text-slate-500">--</span>
+                                    </div>
+                                    <div class="w-full h-2 bg-slate-800 rounded-full overflow-hidden">
+                                        <div id="winRateBar" class="h-full bg-primary w-[0%] transition-all duration-500"></div>
+                                    </div>
+                                    
+                                    <div class="flex items-center justify-between text-xs mb-1">
+                                        <span class="font-medium">Upcoming Signals</span>
+                                        <span id="upcomingCount" class="text-primary font-bold">0</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Configuration Section -->
+                <div id="configSection" class="section-content hidden">
+                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                        <!-- SSID Configuration -->
+                        <div class="glass-card rounded-2xl p-8">
+                            <h4 class="text-lg font-bold flex items-center gap-2 mb-6">
+                                <span class="material-symbols-outlined text-primary">key</span>
+                                SSID Configuration
+                            </h4>
+                            
+                            <div id="ssidConfigured" class="hidden mb-6 p-4 bg-success/10 border border-success/30 rounded-xl">
+                                <div class="flex items-start gap-3">
+                                    <span class="material-symbols-outlined text-success">check_circle</span>
+                                    <div class="flex-1">
+                                        <p class="font-bold text-success mb-2">✅ SSIDs Configured & Loaded</p>
+                                        <div class="space-y-2 mb-3">
+                                            <div class="p-2 bg-slate-800/50 rounded-lg">
+                                                <p class="text-xs text-slate-400 mb-1">Demo SSID:</p>
+                                                <p class="text-xs text-slate-300 font-mono" id="configuredSsidDemo">Not configured</p>
+                                            </div>
+                                            <div class="p-2 bg-slate-800/50 rounded-lg">
+                                                <p class="text-xs text-slate-400 mb-1">Real SSID:</p>
+                                                <p class="text-xs text-slate-300 font-mono" id="configuredSsidReal">Not configured</p>
+                                            </div>
+                                        </div>
+                                        
+                                        <!-- Connection Status -->
+                                        <div class="flex gap-2 mb-3">
+                                            <div class="flex-1 p-2 bg-slate-800/50 rounded-lg">
+                                                <div class="flex items-center gap-2">
+                                                    <div id="demoConnectionDot" class="size-2 rounded-full bg-slate-500"></div>
+                                                    <span class="text-xs text-slate-400">Demo Connected</span>
+                                                </div>
+                                            </div>
+                                            <div class="flex-1 p-2 bg-slate-800/50 rounded-lg">
+                                                <div class="flex items-center gap-2">
+                                                    <div id="realConnectionDot" class="size-2 rounded-full bg-slate-500"></div>
+                                                    <span class="text-xs text-slate-400">Real Connected</span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        
+                                        <button onclick="showSsidForm()" class="text-xs text-primary font-bold hover:underline">Update SSIDs</button>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div id="ssidForm">
+                                <div class="mb-4 p-4 bg-primary/10 border border-primary/30 rounded-xl">
+                                    <div class="flex items-start gap-3">
+                                        <span class="material-symbols-outlined text-primary">info</span>
+                                        <div class="text-xs text-slate-300">
+                                            <p class="mb-2">Demo and Real accounts have different SSIDs.</p>
+                                            <p>Get SSID from PocketOption WebSocket (F12 → Network → WS → Look for 42["auth"...])</p>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <!-- Connection Progress -->
+                                <div id="ssidConnectionProgress" class="hidden mb-4 p-4 bg-slate-800/50 border border-border-muted rounded-xl">
+                                    <div class="flex items-center gap-3 mb-3">
+                                        <div class="animate-spin">
+                                            <span class="material-symbols-outlined text-primary">progress_activity</span>
+                                        </div>
+                                        <div class="flex-1">
+                                            <p class="text-sm font-bold text-slate-200" id="ssidProgressText">Connecting to PocketOption...</p>
+                                            <p class="text-xs text-slate-400 mt-1" id="ssidProgressTime">Elapsed: 0s</p>
+                                        </div>
+                                    </div>
+                                    <div class="w-full h-2 bg-slate-900 rounded-full overflow-hidden">
+                                        <div id="ssidProgressBar" class="h-full bg-primary transition-all duration-500" style="width: 0%"></div>
+                                    </div>
+                                    <p class="text-xs text-slate-500 mt-2">⏱️ Expected time: 15-25 seconds for quality connection</p>
+                                </div>
+                                
+                                <div class="space-y-4 mb-4">
+                                    <div class="space-y-2">
+                                        <label class="text-sm font-bold text-slate-400 uppercase tracking-wider flex items-center gap-2">
+                                            <span class="material-symbols-outlined text-xs text-primary">account_circle</span>
+                                            Demo Account SSID
+                                        </label>
+                                        <input id="ssidDemo" type="text" placeholder='42["auth",{"session":"...","isDemo":1,...}]' class="w-full bg-slate-800 border-border-muted rounded-xl text-sm p-3"/>
+                                    </div>
+                                    
+                                    <div class="space-y-2">
+                                        <label class="text-sm font-bold text-slate-400 uppercase tracking-wider flex items-center gap-2">
+                                            <span class="material-symbols-outlined text-xs text-danger">account_balance_wallet</span>
+                                            Real Account SSID
+                                        </label>
+                                        <input id="ssidReal" type="text" placeholder='42["auth",{"session":"...","isDemo":0,...}]' class="w-full bg-slate-800 border-border-muted rounded-xl text-sm p-3"/>
+                                        <p class="text-xs text-slate-500">⚠️ Optional - Only needed if trading with real money</p>
+                                    </div>
+                                </div>
+                                
+                                <button id="saveSsidBtn" onclick="saveSsids()" class="w-full bg-primary hover:bg-primary/90 text-white font-bold py-3 rounded-xl flex items-center justify-center gap-2 transition-all">
+                                    <span class="material-symbols-outlined">save</span>
+                                    Save SSIDs
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <!-- Telegram Configuration -->
+                        <div class="glass-card rounded-2xl p-8">
+                            <h4 class="text-lg font-bold flex items-center gap-2 mb-6">
+                                <span class="material-symbols-outlined text-primary">send</span>
+                                Telegram Configuration
+                            </h4>
+                            
+                            <!-- Session Active Status -->
+                            <div id="telegramStatus" class="hidden mb-6 p-4 bg-success/10 border border-success/30 rounded-xl">
+                                <div class="flex items-start gap-3">
+                                    <span class="material-symbols-outlined text-success">check_circle</span>
+                                    <div class="flex-1">
+                                        <p class="font-bold text-success mb-2">✅ Session Active</p>
+                                        <div class="text-xs text-slate-400 space-y-1">
+                                            <p>📱 Phone: <span id="configuredPhone" class="text-slate-200"></span></p>
+                                            <p>🔑 API ID: <span id="configuredApiId" class="text-slate-200"></span></p>
+                                            <p>📢 Channel: <span id="configuredChannel" class="text-slate-200"></span></p>
+                                        </div>
+                                        <div class="flex gap-2 mt-3">
+                                            <button onclick="testTelegramConnection()" class="flex-1 text-xs bg-primary hover:bg-primary/90 text-white font-bold px-4 py-2 rounded-lg transition-all flex items-center justify-center gap-1">
+                                                <span class="material-symbols-outlined text-xs">search</span>
+                                                Test Connection
+                                            </button>
+                                            <button onclick="deleteTelegramSession()" class="text-xs bg-danger/10 border border-danger/30 hover:bg-danger/20 text-danger font-bold px-4 py-2 rounded-lg transition-all flex items-center gap-1">
+                                                <span class="material-symbols-outlined text-xs">delete</span>
+                                                Delete Session
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- OTP Needed Status -->
+                            <div id="telegramOtpNeeded" class="hidden mb-6 p-4 bg-yellow-500/10 border border-yellow-500/30 rounded-xl">
+                                <div class="flex items-start gap-3">
+                                    <span class="material-symbols-outlined text-yellow-500">warning</span>
+                                    <div class="flex-1">
+                                        <p class="font-bold text-yellow-500 mb-2">⚠️ Telegram Session Required</p>
+                                        <p class="text-xs text-slate-400 mb-3">Credentials are configured but no active session found. Click below to receive OTP code on your phone.</p>
+                                        <button onclick="sendOtpCode()" class="text-xs bg-primary hover:bg-primary/90 text-white font-bold px-4 py-2 rounded-lg transition-all flex items-center gap-2">
+                                            <span class="material-symbols-outlined text-sm">mobile_friendly</span>
+                                            Send OTP Code
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- OTP Input Form -->
+                            <div id="telegramOtpForm" class="hidden mb-6">
+                                <div class="p-4 bg-primary/10 border border-primary/30 rounded-xl">
+                                    <div class="flex items-start gap-3 mb-4">
+                                        <span class="material-symbols-outlined text-primary text-2xl">mail</span>
+                                        <div class="flex-1">
+                                            <p class="font-bold text-primary mb-1">📨 OTP Code Sent!</p>
+                                            <p class="text-xs text-slate-400">Check your Telegram app for the verification code.</p>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="space-y-3">
+                                        <div>
+                                            <label class="text-sm font-bold text-slate-300 block mb-2">
+                                                <span class="material-symbols-outlined text-xs mr-1">lock</span>
+                                                Enter OTP Code
+                                            </label>
+                                            <input 
+                                                id="otpCode" 
+                                                type="text" 
+                                                placeholder="12345" 
+                                                maxlength="5" 
+                                                class="w-full bg-slate-800 border-2 border-border-muted rounded-xl text-lg font-bold text-center p-4 focus:ring-2 focus:ring-primary focus:border-primary transition-all tracking-widest"
+                                                onkeypress="if(event.key === 'Enter') verifyOtp()"
+                                            />
+                                            <p class="text-xs text-slate-500 mt-2">Press Enter or click Verify after entering the code</p>
+                                        </div>
+                                        
+                                        <div class="flex gap-2">
+                                            <button onclick="verifyOtp()" class="flex-1 bg-success hover:bg-success/90 text-white font-bold px-4 py-3 rounded-xl transition-all flex items-center justify-center gap-2">
+                                                <span class="material-symbols-outlined">check_circle</span>
+                                                Verify OTP
+                                            </button>
+                                            <button onclick="cancelOtp()" class="bg-slate-700 hover:bg-slate-600 text-white font-bold px-4 py-3 rounded-xl transition-all">
+                                                <span class="material-symbols-outlined">close</span>
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Initial Configuration Form -->
+                            <div id="telegramForm">
+                                <div class="mb-4 p-4 bg-primary/10 border border-primary/30 rounded-xl">
+                                    <div class="flex items-start gap-3">
+                                        <span class="material-symbols-outlined text-primary">info</span>
+                                        <div>
+                                            <p class="text-sm text-slate-300 mb-2">Configure Telegram credentials to receive trading signals.</p>
+                                            <p class="text-xs text-slate-400">Get API credentials from: <a href="https://my.telegram.org/apps" target="_blank" class="text-primary hover:underline">my.telegram.org/apps</a></p>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="space-y-4">
+                                    <div class="space-y-2">
+                                        <label class="text-sm font-bold text-slate-400 uppercase tracking-wider flex items-center gap-2">
+                                            <span class="material-symbols-outlined text-xs">phone</span>
+                                            Phone Number
+                                        </label>
+                                        <input id="phone" type="text" placeholder="+1234567890" class="w-full bg-slate-800 border-border-muted rounded-xl text-sm p-3 focus:ring-2 focus:ring-primary focus:border-primary transition-all"/>
+                                        <p class="text-xs text-slate-500">Include country code (e.g., +1 for US)</p>
+                                    </div>
+                                    
+                                    <div class="space-y-2">
+                                        <label class="text-sm font-bold text-slate-400 uppercase tracking-wider flex items-center gap-2">
+                                            <span class="material-symbols-outlined text-xs">key</span>
+                                            Telegram API ID
+                                        </label>
+                                        <input id="apiId" type="text" placeholder="12345678" class="w-full bg-slate-800 border-border-muted rounded-xl text-sm p-3 focus:ring-2 focus:ring-primary focus:border-primary transition-all"/>
+                                    </div>
+                                    
+                                    <div class="space-y-2">
+                                        <label class="text-sm font-bold text-slate-400 uppercase tracking-wider flex items-center gap-2">
+                                            <span class="material-symbols-outlined text-xs">tag</span>
+                                            Telegram API Hash
+                                        </label>
+                                        <input id="apiHash" type="password" placeholder="abcdef1234567890" class="w-full bg-slate-800 border-border-muted rounded-xl text-sm p-3 focus:ring-2 focus:ring-primary focus:border-primary transition-all"/>
+                                    </div>
+                                    
+                                    <button onclick="saveTelegram()" class="w-full bg-primary hover:bg-primary/90 text-white font-bold py-3 rounded-xl flex items-center justify-center gap-2 transition-all">
+                                        <span class="material-symbols-outlined">save</span>
+                                        Save Configuration
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Configuration Overview Panel -->
+                    <div class="mt-8">
+                        <div class="glass-card rounded-2xl p-8">
+                            <h4 class="text-lg font-bold flex items-center gap-2 mb-6">
+                                <span class="material-symbols-outlined text-primary">settings</span>
+                                Current Configuration (.env)
+                            </h4>
+                            
+                            <div class="space-y-4">
+                                <!-- SSID Configuration -->
+                                <div class="p-4 bg-slate-800/50 rounded-xl border border-border-muted">
+                                    <div class="flex items-center gap-2 mb-3">
+                                        <span class="material-symbols-outlined text-xs text-primary">key</span>
+                                        <h5 class="font-bold text-sm">SSID Configuration</h5>
+                                    </div>
+                                    <div class="space-y-2">
+                                        <div class="flex justify-between items-start">
+                                            <span class="text-xs text-slate-400">Demo SSID:</span>
+                                            <span class="text-xs text-slate-300 font-mono text-right max-w-md truncate" id="envSsidDemo">Loading...</span>
+                                        </div>
+                                        <div class="flex justify-between items-start">
+                                            <span class="text-xs text-slate-400">Real SSID:</span>
+                                            <span class="text-xs text-slate-300 font-mono text-right max-w-md truncate" id="envSsidReal">Loading...</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <!-- Telegram Configuration -->
+                                <div class="p-4 bg-slate-800/50 rounded-xl border border-border-muted">
+                                    <div class="flex items-center gap-2 mb-3">
+                                        <span class="material-symbols-outlined text-xs text-primary">send</span>
+                                        <h5 class="font-bold text-sm">Telegram Configuration</h5>
+                                    </div>
+                                    <div class="space-y-2">
+                                        <div class="flex justify-between">
+                                            <span class="text-xs text-slate-400">API ID:</span>
+                                            <span class="text-xs text-slate-300 font-mono" id="envTelegramApiId">Loading...</span>
+                                        </div>
+                                        <div class="flex justify-between">
+                                            <span class="text-xs text-slate-400">API Hash:</span>
+                                            <span class="text-xs text-slate-300 font-mono" id="envTelegramApiHash">Loading...</span>
+                                        </div>
+                                        <div class="flex justify-between">
+                                            <span class="text-xs text-slate-400">Phone:</span>
+                                            <span class="text-xs text-slate-300 font-mono" id="envTelegramPhone">Loading...</span>
+                                        </div>
+                                        <div class="flex justify-between">
+                                            <span class="text-xs text-slate-400">Channel:</span>
+                                            <span class="text-xs text-slate-300 font-mono" id="envTelegramChannel">Loading...</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <!-- Trading Configuration -->
+                                <div class="p-4 bg-slate-800/50 rounded-xl border border-border-muted">
+                                    <div class="flex items-center gap-2 mb-3">
+                                        <span class="material-symbols-outlined text-xs text-primary">tune</span>
+                                        <h5 class="font-bold text-sm">Trading Configuration</h5>
+                                    </div>
+                                    <div class="space-y-2">
+                                        <div class="flex justify-between">
+                                            <span class="text-xs text-slate-400">Trade Amount:</span>
+                                            <span class="text-xs text-slate-300 font-mono" id="envTradeAmount">Loading...</span>
+                                        </div>
+                                        <div class="flex justify-between">
+                                            <span class="text-xs text-slate-400">Account Mode:</span>
+                                            <span class="text-xs text-slate-300 font-mono" id="envIsDemo">Loading...</span>
+                                        </div>
+                                        <div class="flex justify-between">
+                                            <span class="text-xs text-slate-400">Multiplier:</span>
+                                            <span class="text-xs text-slate-300 font-mono" id="envMultiplier">Loading...</span>
+                                        </div>
+                                        <div class="flex justify-between">
+                                            <span class="text-xs text-slate-400">Martingale Step:</span>
+                                            <span class="text-xs text-slate-300 font-mono" id="envMartingaleStep">Loading...</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <button onclick="loadConfig()" class="w-full mt-4 bg-primary/10 hover:bg-primary/20 text-primary font-bold py-3 rounded-xl flex items-center justify-center gap-2 transition-all border border-primary/30">
+                                <span class="material-symbols-outlined">refresh</span>
+                                Reload Configuration
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <!-- Clear All Sessions Section -->
+                    <div class="mt-8">
+                        <div class="glass-card rounded-2xl p-8 border-2 border-danger/20">
+                            <h4 class="text-lg font-bold flex items-center gap-2 mb-4 text-danger">
+                                <span class="material-symbols-outlined">warning</span>
+                                Troubleshooting
+                            </h4>
+                            
+                            <div class="mb-4 p-4 bg-yellow-500/10 border border-yellow-500/30 rounded-xl">
+                                <div class="flex items-start gap-3">
+                                    <span class="material-symbols-outlined text-yellow-500">info</span>
+                                    <div class="text-xs text-slate-300">
+                                        <p class="font-bold mb-2">When to use Clear All Sessions:</p>
+                                        <ul class="list-disc list-inside space-y-1 text-slate-400">
+                                            <li>Telegram connection not working</li>
+                                            <li>Database locked errors</li>
+                                            <li>Session expired or corrupted</li>
+                                            <li>Bot not responding to signals</li>
+                                        </ul>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <button onclick="clearAllSessions()" class="w-full bg-danger hover:bg-danger/90 text-white font-bold py-4 rounded-xl flex items-center justify-center gap-2 transition-all shadow-lg shadow-danger/20">
+                                <span class="material-symbols-outlined">delete_forever</span>
+                                Clear All Sessions & Locks
+                            </button>
+                            
+                            <p class="text-xs text-slate-500 text-center mt-3">
+                                This will delete all Telegram session files and database locks. You'll need to verify with OTP again.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- History Section -->
+                <div id="historySection" class="section-content hidden">
+                    <div class="glass-card rounded-2xl p-8">
+                        <div class="flex items-center justify-between mb-6">
+                            <h4 class="text-lg font-bold flex items-center gap-2">
+                                <span class="material-symbols-outlined text-primary">folder_open</span>
+                                Trade History (CSV Files)
+                            </h4>
+                            <button onclick="loadCsvFiles()" class="bg-primary hover:bg-primary/90 text-white font-bold px-4 py-2 rounded-xl flex items-center gap-2 transition-all">
+                                <span class="material-symbols-outlined">refresh</span>
+                                Refresh Files
+                            </button>
+                        </div>
+                        
+                        <div id="csvFilesList" class="mb-8">
+                            <p class="text-center text-slate-500 py-8">Click refresh to load CSV files</p>
+                        </div>
+                        
+                        <div id="csvDataView" class="hidden">
+                            <div class="flex items-center justify-between mb-6 pb-4 border-b border-border-muted">
+                                <h5 class="font-bold flex items-center gap-2">
+                                    <span class="material-symbols-outlined text-primary">description</span>
+                                    <span id="csvFileName"></span>
+                                </h5>
+                                <button onclick="downloadCsv()" class="text-xs bg-primary hover:bg-primary/90 text-white font-bold px-4 py-2 rounded-lg flex items-center gap-2">
+                                    <span class="material-symbols-outlined text-sm">download</span>
+                                    Download
+                                </button>
+                            </div>
+                            
+                            <!-- CSV Stats Grid -->
+                            <div class="grid grid-cols-2 md:grid-cols-5 gap-4 mb-8">
+                                <div class="bg-slate-800/50 p-4 rounded-xl border border-border-muted">
+                                    <p class="text-xs text-slate-400 mb-1">Total Trades</p>
+                                    <p class="text-xl font-bold" id="csvTotalTrades">0</p>
+                                </div>
+                                <div class="bg-slate-800/50 p-4 rounded-xl border border-border-muted">
+                                    <p class="text-xs text-slate-400 mb-1">Wins</p>
+                                    <p class="text-xl font-bold text-success" id="csvWins">0</p>
+                                </div>
+                                <div class="bg-slate-800/50 p-4 rounded-xl border border-border-muted">
+                                    <p class="text-xs text-slate-400 mb-1">Losses</p>
+                                    <p class="text-xl font-bold text-danger" id="csvLosses">0</p>
+                                </div>
+                                <div class="bg-slate-800/50 p-4 rounded-xl border border-border-muted">
+                                    <p class="text-xs text-slate-400 mb-1">Win Rate</p>
+                                    <p class="text-xl font-bold text-primary" id="csvWinRate">0%</p>
+                                </div>
+                                <div class="bg-slate-800/50 p-4 rounded-xl border border-border-muted">
+                                    <p class="text-xs text-slate-400 mb-1">Total P/L</p>
+                                    <p class="text-xl font-bold" id="csvProfit">$0.00</p>
+                                </div>
+                            </div>
+                            
+                            <!-- CSV Table -->
+                            <div class="overflow-x-auto">
+                                <table class="w-full text-left">
+                                    <thead class="bg-slate-800/50 text-[10px] uppercase font-bold text-slate-400">
+                                        <tr>
+                                            <th class="px-6 py-4">Date</th>
+                                            <th class="px-6 py-4">Time</th>
+                                            <th class="px-6 py-4">Asset</th>
+                                            <th class="px-6 py-4">Direction</th>
+                                            <th class="px-6 py-4">Amount</th>
+                                            <th class="px-6 py-4">Step</th>
+                                            <th class="px-6 py-4">Duration</th>
+                                            <th class="px-6 py-4">Result</th>
+                                            <th class="px-6 py-4 text-right">P/L</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="csvTableBody" class="divide-y divide-border-muted">
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Signals Section -->
+                <div id="signalsSection" class="section-content hidden">
+                    <div class="glass-card rounded-2xl p-8">
+                        <div class="flex items-center justify-between mb-6">
+                            <h4 class="text-lg font-bold flex items-center gap-2">
+                                <span class="material-symbols-outlined text-primary">electric_bolt</span>
+                                Telegram Signals Monitor
+                            </h4>
+                            <button onclick="loadUpcomingTrades()" class="bg-primary hover:bg-primary/90 text-white font-bold px-4 py-2 rounded-xl flex items-center gap-2 transition-all">
+                                <span class="material-symbols-outlined">refresh</span>
+                                Refresh
+                            </button>
+                        </div>
+                        
+                        <div id="upcomingTradesContainer">
+                            <div class="text-center py-12 text-slate-500">
+                                <span class="material-symbols-outlined text-6xl mb-4 opacity-30">signal_cellular_alt</span>
+                                <p>Click refresh to load upcoming signals</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        // Use current domain for API calls (works both locally and on Railway)
+        const API_BASE = window.location.origin + '/api';
+        
+        // Live Logging System - MUST BE DEFINED FIRST
+        function addLog(message, type = 'info') {
+            const logsContainer = document.getElementById('systemLogs');
+            if (!logsContainer) {
+                console.log(`[LOG] ${message}`);
+                return;
+            }
+            
+            const timestamp = new Date().toLocaleTimeString('en-US', { hour12: false, hour: '2-digit', minute: '2-digit', second: '2-digit', fractionalSecondDigits: 3 });
+            
+            const colors = {
+                'info': 'text-slate-400',
+                'success': 'text-success',
+                'error': 'text-danger',
+                'warning': 'text-yellow-400',
+                'primary': 'text-primary'
+            };
+            
+            const icons = {
+                'info': '•',
+                'success': '✓',
+                'error': '✗',
+                'warning': '⚠',
+                'primary': '→'
+            };
+            
+            const logEntry = document.createElement('div');
+            logEntry.className = `${colors[type] || colors.info} flex gap-2`;
+            logEntry.innerHTML = `
+                <span class="text-slate-600">[${timestamp}]</span>
+                <span>${icons[type] || icons.info}</span>
+                <span class="flex-1">${message}</span>
+            `;
+            
+            logsContainer.appendChild(logEntry);
+            
+            // Auto-scroll to bottom
+            logsContainer.scrollTop = logsContainer.scrollHeight;
+            
+            // Keep only last 100 logs
+            while (logsContainer.children.length > 100) {
+                logsContainer.removeChild(logsContainer.firstChild);
+            }
+        }
+        
+        function clearLogs() {
+            const logsContainer = document.getElementById('systemLogs');
+            if (logsContainer) {
+                logsContainer.innerHTML = '<div class="text-slate-500">Logs cleared. Waiting for activity...</div>';
+            }
+        }
+        let currentCsvFile = '';
+        
+        // LocalStorage cache management
+        const CACHE_KEYS = {
+            BALANCE: 'po_balance_cache',
+            BALANCE_TIMESTAMP: 'po_balance_timestamp',
+            TRADING_CONFIG: 'po_trading_config',
+            CONNECTION_STATE: 'po_connection_state'
+        };
+        
+        const CACHE_DURATION = 10000; // 10 seconds
+        
+        // Cache helpers
+        function getCachedData(key) {
+            try {
+                const data = localStorage.getItem(key);
+                return data ? JSON.parse(data) : null;
+            } catch (e) {
+                console.error('Cache read error:', e);
+                return null;
+            }
+        }
+        
+        function setCachedData(key, data) {
+            try {
+                localStorage.setItem(key, JSON.stringify(data));
+            } catch (e) {
+                console.error('Cache write error:', e);
+            }
+        }
+        
+        function isCacheValid(timestampKey) {
+            const timestamp = localStorage.getItem(timestampKey);
+            if (!timestamp) return false;
+            const age = Date.now() - parseInt(timestamp);
+            return age < CACHE_DURATION;
+        }
+        
+        // Load cached balance on startup
+        function loadCachedBalance() {
+            if (isCacheValid(CACHE_KEYS.BALANCE_TIMESTAMP)) {
+                const cached = getCachedData(CACHE_KEYS.BALANCE);
+                if (cached) {
+                    document.getElementById('demoBalance').textContent = '$' + (cached.demo || 0).toFixed(2);
+                    document.getElementById('realBalance').textContent = '$' + (cached.real || 0).toFixed(2);
+                    const currentBalance = cached.demo > 0 ? cached.demo : cached.real;
+                    document.getElementById('currentBalanceDisplay').textContent = '$' + currentBalance.toFixed(2);
+                    addLog('📦 Loaded cached balance from localStorage', 'info');
+                    return true;
+                }
+            }
+            return false;
+        }
+        
+        // Load cached trading config
+        function loadCachedConfig() {
+            const config = getCachedData(CACHE_KEYS.TRADING_CONFIG);
+            if (config) {
+                if (config.initialAmount) document.getElementById('initialAmount').value = config.initialAmount;
+                if (config.multiplier) document.getElementById('multiplier').value = config.multiplier;
+                if (config.accountType) document.getElementById('accountType').value = config.accountType;
+                if (config.martingaleStep) document.getElementById('martingaleStep').value = config.martingaleStep;
+                updateStakeDisplay();
+                updateMultiplierDisplay();
+                updateMartingalePreview();
+                addLog('📦 Loaded cached config from localStorage', 'info');
+            }
+        }
+        
+        // Save trading config to cache
+        function saveTradingConfigToCache() {
+            const config = {
+                initialAmount: document.getElementById('initialAmount').value,
+                multiplier: document.getElementById('multiplier').value,
+                accountType: document.getElementById('accountType').value,
+                martingaleStep: document.getElementById('martingaleStep').value
+            };
+            setCachedData(CACHE_KEYS.TRADING_CONFIG, config);
+        }
+        
+        // Section Navigation
+        function showSection(sectionName) {
+            const sections = ['dashboard', 'config', 'history', 'signals'];
+            sections.forEach(section => {
+                const element = document.getElementById(section + 'Section');
+                if (element) {
+                    element.classList.toggle('hidden', section !== sectionName);
+                }
+            });
+            
+            // Update nav active state
+            document.querySelectorAll('nav a').forEach(link => {
+                link.classList.remove('bg-primary/10', 'text-primary');
+                link.classList.add('text-slate-400');
+            });
+            event.target.closest('a').classList.add('bg-primary/10', 'text-primary');
+            event.target.closest('a').classList.remove('text-slate-400');
+        }
+        
+        // Alert System
+        function showAlert(message, type = 'success') {
+            const alertContainer = document.getElementById('alertContainer');
+            const alertDiv = document.createElement('div');
+            
+            const bgColor = type === 'success' ? 'bg-success/10 border-success/30' : 'bg-danger/10 border-danger/30';
+            const textColor = type === 'success' ? 'text-success' : 'text-danger';
+            const icon = type === 'success' ? 'check_circle' : 'error';
+            
+            alertDiv.className = `glass-card p-4 rounded-xl border ${bgColor} flex items-center gap-3 animate-slide-in`;
+            alertDiv.innerHTML = `
+                <span class="material-symbols-outlined ${textColor}">${icon}</span>
+                <p class="text-sm text-slate-100">${message}</p>
+            `;
+            
+            alertContainer.appendChild(alertDiv);
+            
+            setTimeout(() => {
+                alertDiv.style.opacity = '0';
+                alertDiv.style.transform = 'translateX(100%)';
+                setTimeout(() => alertDiv.remove(), 300);
+            }, 5000);
+        }
+        
+        // Handle fetch errors with user-friendly messages
+        function handleFetchError(error, context = '') {
+            console.error(`Fetch error (${context}):`, error);
+            
+            let message = '';
+            
+            if (error.message === 'Failed to fetch' || error.name === 'TypeError') {
+                message = '⚠️ Cannot connect to server. Please ensure the API server is running.';
+                
+                // Update connection status to show disconnected
+                document.getElementById('connectionStatus').classList.remove('bg-success', 'animate-pulse');
+                document.getElementById('connectionStatus').classList.add('bg-danger');
+                document.getElementById('connectionText').textContent = 'SERVER OFFLINE';
+                document.getElementById('connectionText').classList.remove('text-success', 'text-slate-500');
+                document.getElementById('connectionText').classList.add('text-danger');
+            } else if (error.message.includes('NetworkError')) {
+                message = '🌐 Network error. Check your internet connection.';
+            } else if (error.message.includes('timeout')) {
+                message = '⏱️ Request timeout. Server is taking too long to respond.';
+            } else {
+                message = `❌ Error: ${error.message}`;
+            }
+            
+            return message;
+        }
+        
+        // Check server connectivity
+        async function checkServerConnection() {
+            try {
+                const response = await fetch(`${API_BASE}/health`, { 
+                    method: 'GET',
+                    signal: AbortSignal.timeout(5000) // 5 second timeout
+                });
+                
+                if (response.ok) {
+                    // Server is online
+                    document.getElementById('connectionStatus').classList.remove('bg-danger', 'bg-slate-500');
+                    document.getElementById('connectionStatus').classList.add('bg-success');
+                    document.getElementById('connectionText').textContent = 'SERVER ONLINE';
+                    document.getElementById('connectionText').classList.remove('text-danger', 'text-slate-500');
+                    document.getElementById('connectionText').classList.add('text-success');
+                    return true;
+                } else {
+                    throw new Error('Server returned error');
+                }
+            } catch (error) {
+                // Server is offline
+                document.getElementById('connectionStatus').classList.remove('bg-success', 'animate-pulse');
+                document.getElementById('connectionStatus').classList.add('bg-danger');
+                document.getElementById('connectionText').textContent = 'SERVER OFFLINE';
+                document.getElementById('connectionText').classList.remove('text-success', 'text-slate-500');
+                document.getElementById('connectionText').classList.add('text-danger');
+                return false;
+            }
+        }
+        
+        // Update Displays
+        function updateStakeDisplay() {
+            const value = document.getElementById('initialAmount').value;
+            document.getElementById('stakeDisplay').textContent = '$' + parseFloat(value).toFixed(2);
+            
+            // Sync with quick input
+            document.getElementById('quickTradeAmount').value = parseFloat(value).toFixed(2);
+            
+            updateMartingalePreview();
+        }
+        
+        function updateMultiplierDisplay() {
+            const value = document.getElementById('multiplier').value;
+            document.getElementById('multiplierDisplay').textContent = parseFloat(value).toFixed(2) + 'x';
+            
+            // Sync with quick input
+            document.getElementById('quickMultiplier').value = parseFloat(value).toFixed(2);
+            
+            updateMartingalePreview();
+        }
+        
+        function syncTradeAmount() {
+            const value = document.getElementById('quickTradeAmount').value;
+            const parsedValue = parseFloat(value) || 0.1;
+            
+            // Update main slider
+            document.getElementById('initialAmount').value = parsedValue;
+            document.getElementById('stakeDisplay').textContent = '$' + parsedValue.toFixed(2);
+            
+            updateMartingalePreview();
+        }
+        
+        function syncMultiplier() {
+            const value = document.getElementById('quickMultiplier').value;
+            const parsedValue = parseFloat(value) || 1.1;
+            
+            // Update main slider
+            document.getElementById('multiplier').value = parsedValue;
+            document.getElementById('multiplierDisplay').textContent = parsedValue.toFixed(2) + 'x';
+            
+            updateMartingalePreview();
+        }
+        
+        function updateAccountBadge() {
+            const isDemo = document.getElementById('accountType').value === 'true';
+            const badge = document.getElementById('accountTypeBadge');
+            const modeBadge = document.getElementById('tradingModeBadge');
+            const accountTypeDisplay = document.getElementById('accountTypeDisplay');
+            
+            badge.textContent = isDemo ? 'DEMO' : 'REAL';
+            modeBadge.textContent = isDemo ? 'DEMO' : 'REAL';
+            accountTypeDisplay.textContent = isDemo ? 'DEMO' : 'REAL';
+            
+            // Update mode badge color
+            if (isDemo) {
+                modeBadge.classList.remove('bg-danger/20', 'text-danger');
+                modeBadge.classList.add('bg-primary/20', 'text-primary');
+                accountTypeDisplay.classList.remove('text-danger');
+                accountTypeDisplay.classList.add('text-primary');
+            } else {
+                modeBadge.classList.remove('bg-primary/20', 'text-primary');
+                modeBadge.classList.add('bg-danger/20', 'text-danger');
+                accountTypeDisplay.classList.remove('text-primary');
+                accountTypeDisplay.classList.add('text-danger');
+            }
+            
+            // Log mode change
+            addLog(`🔄 Trading mode changed to ${isDemo ? 'DEMO' : 'REAL'}`, 'primary');
+            
+            // Don't auto-restart during page load - let auto-start handle it
+            // Only restart if user manually changes mode after page is loaded
+        }
+        
+        function updateMartingalePreview() {
+            const initialAmount = parseFloat(document.getElementById('initialAmount').value) || 1.0;
+            const multiplier = parseFloat(document.getElementById('multiplier').value) || 2.5;
+            const step = parseInt(document.getElementById('martingaleStep').value) || 0;
+            
+            const preview = document.getElementById('martingalePreview');
+            let html = '';
+            
+            // Show 6 steps
+            for (let i = 0; i < 6; i++) {
+                const currentStep = step + i;
+                const amount = initialAmount * Math.pow(multiplier, currentStep);
+                const isActive = i === 0;
+                
+                // Opacity decreases for later steps
+                let opacity = '';
+                if (i === 0) opacity = '';
+                else if (i === 1) opacity = '';
+                else if (i === 2) opacity = 'opacity-90';
+                else if (i === 3) opacity = 'opacity-70';
+                else if (i === 4) opacity = 'opacity-50';
+                else opacity = 'opacity-30';
+                
+                const bgColor = i === 0 ? 'bg-primary' : 'bg-slate-800';
+                const borderColor = i === 0 ? 'border-primary/30' : 'border-border-muted';
+                const textColor = i === 0 ? 'text-white' : 'text-slate-400';
+                const amountColor = i === 0 ? 'text-white' : 'text-slate-500';
+                
+                html += `
+                    <div class="flex items-center gap-4 relative ${opacity}">
+                        <div class="size-10 rounded-full ${bgColor} flex items-center justify-center text-xs font-bold border ${borderColor} z-10 ${isActive ? 'glow-primary' : ''}">
+                            ${currentStep + 1}
+                        </div>
+                        <div class="flex-1 flex justify-between items-center bg-slate-800/50 p-3 rounded-xl border ${borderColor}">
+                            <span class="text-sm ${textColor}">${isActive ? 'Current Step' : 'Step ' + (currentStep + 1)}</span>
+                            <span class="font-bold ${amountColor}">$${amount.toFixed(2)}</span>
+                        </div>
+                        ${i < 5 ? '<div class="absolute left-5 top-10 w-0.5 h-4 bg-slate-800"></div>' : ''}
+                    </div>
+                `;
+            }
+            
+            preview.innerHTML = html;
+        }
+
+        // Configuration Functions
+        async function loadConfig() {
+            // Hardcoded fallback configuration from .env
+            const FALLBACK_CONFIG = {
+                ssid_demo: '42["auth",{"session":"8kmju1f41cibg1vg5pihe37d7u","isDemo":1,"uid":116040367,"platform":2,"isFastHistory":true,"isOptimized":true}]',
+                ssid_real: '42["auth",{"session":"a:4:{s:10:\\"session_id\\";s:32:\\"2a8f01f1efeca20cc174c1b75eb6156a\\";s:10:\\"ip_address\\";s:14:\\"172.86.107.247\\";s:10:\\"user_agent\\";s:111:\\"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.36\\";s:13:\\"last_activity\\";i:1772807404;}3fed45de8f1ed072a8cabf7a07571f05","isDemo":0,"uid":116040367,"platform":2,"isFastHistory":true,"isOptimized":true}]',
+                telegram_api_id: '28375707',
+                telegram_api_hash: 'cf54e727df04363575f8ee9f120be2c9',
+                telegram_phone: '+12427272924',
+                telegram_channel: 'testpob1234'
+            };
+            
+            try {
+                const response = await fetch(`${API_BASE}/config`);
+                const data = await response.json();
+                
+                let configData = data;
+                
+                // If API fails or returns empty, use hardcoded fallback
+                if (!response.ok || !data.telegram) {
+                    addLog('⚠️ Using hardcoded configuration from .env', 'warning');
+                    configData = {
+                        ssid_demo_configured: true,
+                        ssid_real_configured: true,
+                        ssid_demo_preview: FALLBACK_CONFIG.ssid_demo.substring(0, 20) + '...' + FALLBACK_CONFIG.ssid_demo.slice(-10),
+                        ssid_real_preview: FALLBACK_CONFIG.ssid_real.substring(0, 20) + '...' + FALLBACK_CONFIG.ssid_real.slice(-10),
+                        telegram: {
+                            api_id: FALLBACK_CONFIG.telegram_api_id,
+                            api_hash: '***' + FALLBACK_CONFIG.telegram_api_hash.slice(-4),
+                            phone: FALLBACK_CONFIG.telegram_phone,
+                            channel: FALLBACK_CONFIG.telegram_channel
+                        }
+                    };
+                }
+                
+                if (configData) {
+                    // Update configuration overview panel
+                    document.getElementById('envSsidDemo').textContent = configData.ssid_demo_preview || FALLBACK_CONFIG.ssid_demo.substring(0, 20) + '...';
+                    document.getElementById('envSsidReal').textContent = configData.ssid_real_preview || FALLBACK_CONFIG.ssid_real.substring(0, 20) + '...';
+                    
+                    document.getElementById('envTelegramApiId').textContent = configData.telegram?.api_id || FALLBACK_CONFIG.telegram_api_id;
+                    document.getElementById('envTelegramApiHash').textContent = configData.telegram?.api_hash || ('***' + FALLBACK_CONFIG.telegram_api_hash.slice(-4));
+                    document.getElementById('envTelegramPhone').textContent = configData.telegram?.phone || FALLBACK_CONFIG.telegram_phone;
+                    document.getElementById('envTelegramChannel').textContent = configData.telegram?.channel || FALLBACK_CONFIG.telegram_channel;
+                    
+                    // Load trading config from .env (via API)
+                    if (configData.trading) {
+                        // Set form values from .env
+                        document.getElementById('initialAmount').value = configData.trading.trade_amount || 1.0;
+                        document.getElementById('accountType').value = configData.trading.is_demo ? 'true' : 'false';
+                        document.getElementById('multiplier').value = configData.trading.multiplier || 2.5;
+                        document.getElementById('martingaleStep').value = configData.trading.martingale_step || 0;
+                        
+                        // Update displays
+                        updateStakeDisplay();
+                        updateMartingalePreview();
+                        updateAccountBadge();  // Update account type badge
+                        
+                        addLog('✅ Trading config loaded from .env: $' + configData.trading.trade_amount + ' (' + (configData.trading.is_demo ? 'DEMO' : 'REAL') + ')', 'success');
+                    }
+                    
+                    // Update Account Information display
+                    document.getElementById('envTradeAmount').textContent = '$' + (configData.trading?.trade_amount || document.getElementById('initialAmount').value);
+                    document.getElementById('envIsDemo').textContent = (configData.trading?.is_demo ? 'DEMO' : 'REAL') || (document.getElementById('accountType').value === 'true' ? 'DEMO' : 'REAL');
+                    document.getElementById('envMultiplier').textContent = (configData.trading?.multiplier || document.getElementById('multiplier').value) + 'x';
+                    document.getElementById('envMartingaleStep').textContent = configData.trading?.martingale_step || document.getElementById('martingaleStep').value;
+                    
+                    // Auto-load SSIDs if configured
+                    if (configData.ssid_demo_configured || configData.ssid_real_configured) {
+                        document.getElementById('ssidForm').classList.add('hidden');
+                        document.getElementById('ssidConfigured').classList.remove('hidden');
+                        
+                        // Update SSID displays with full preview
+                        const demoDisplay = document.getElementById('configuredSsidDemo');
+                        const realDisplay = document.getElementById('configuredSsidReal');
+                        
+                        if (configData.ssid_demo_configured && configData.ssid_demo_preview) {
+                            demoDisplay.textContent = configData.ssid_demo_preview;
+                            demoDisplay.classList.remove('text-slate-500');
+                            demoDisplay.classList.add('text-slate-300');
+                            addLog('🔑 Demo SSID loaded from .env', 'success');
+                        } else {
+                            demoDisplay.textContent = '❌ Not configured';
+                            demoDisplay.classList.add('text-slate-500');
+                        }
+                        
+                        if (configData.ssid_real_configured && configData.ssid_real_preview) {
+                            realDisplay.textContent = configData.ssid_real_preview;
+                            realDisplay.classList.remove('text-slate-500');
+                            realDisplay.classList.add('text-slate-300');
+                            addLog('🔑 Real SSID loaded from .env', 'success');
+                        } else {
+                            realDisplay.textContent = '❌ Not configured (optional)';
+                            realDisplay.classList.add('text-slate-500');
+                        }
+                        
+                        // Auto-connect to PocketOption in background
+                        setTimeout(() => {
+                            addLog('🔌 Establishing persistent connections to PocketOption...', 'info');
+                            updateBalance(); // This will create the persistent connections
+                        }, 1000);
+                    } else {
+                        addLog('⚠️ SSIDs not configured - Please add SSIDs in Configuration', 'warning');
+                    }
+                    
+                    // Load Telegram configuration
+                    const sessionResponse = await fetch(`${API_BASE}/telegram/check-session`);
+                    const sessionData = await sessionResponse.json();
+                    
+                    // Pre-fill Telegram form fields from .env or fallback
+                    const telegramPhone = configData.telegram?.phone || FALLBACK_CONFIG.telegram_phone;
+                    const telegramApiId = configData.telegram?.api_id || FALLBACK_CONFIG.telegram_api_id;
+                    const telegramApiHash = FALLBACK_CONFIG.telegram_api_hash; // Use full hash for form
+                    
+                    if (telegramPhone) {
+                        document.getElementById('phone').value = telegramPhone;
+                    }
+                    if (telegramApiId) {
+                        document.getElementById('apiId').value = telegramApiId;
+                    }
+                    // Pre-fill API hash if using fallback
+                    if (!response.ok && telegramApiHash) {
+                        document.getElementById('apiHash').value = telegramApiHash;
+                    } else if (configData.telegram?.api_hash && configData.telegram.api_hash !== 'Not configured') {
+                        document.getElementById('apiHash').placeholder = '••••••••' + configData.telegram.api_hash.slice(-4);
+                    }
+                    
+                    if (sessionData.session_exists) {
+                        // Session exists - hide all forms, show status
+                        document.getElementById('telegramForm').classList.add('hidden');
+                        document.getElementById('telegramOtpNeeded').classList.add('hidden');
+                        document.getElementById('telegramOtpForm').classList.add('hidden');
+                        document.getElementById('telegramStatus').classList.remove('hidden');
+                        
+                        document.getElementById('configuredPhone').textContent = telegramPhone || 'Not set';
+                        document.getElementById('configuredApiId').textContent = telegramApiId || 'Not set';
+                        document.getElementById('configuredChannel').textContent = configData.telegram?.channel || FALLBACK_CONFIG.telegram_channel;
+                        
+                        // Show session type in logs
+                        const sessionType = sessionData.session_type || 'unknown';
+                        addLog(`✓ Telegram session active (${sessionType})`, 'success');
+                    } else if (sessionData.needs_otp) {
+                        // Credentials configured but no session - show OTP button
+                        document.getElementById('telegramForm').classList.add('hidden');
+                        document.getElementById('telegramStatus').classList.add('hidden');
+                        document.getElementById('telegramOtpForm').classList.add('hidden');
+                        document.getElementById('telegramOtpNeeded').classList.remove('hidden');
+                        addLog('⚠️ Telegram session required - click to receive OTP', 'warning');
+                    } else {
+                        // No credentials - show form
+                        document.getElementById('telegramForm').classList.remove('hidden');
+                        document.getElementById('telegramStatus').classList.add('hidden');
+                        document.getElementById('telegramOtpNeeded').classList.add('hidden');
+                        document.getElementById('telegramOtpForm').classList.add('hidden');
+                        addLog('📝 Configure Telegram credentials', 'info');
+                    }
+                }
+            } catch (error) {
+                console.error('Error loading config:', error);
+                addLog('⚠️ Failed to load config from API, using hardcoded values', 'warning');
+                
+                // Use hardcoded fallback on error
+                document.getElementById('envSsidDemo').textContent = FALLBACK_CONFIG.ssid_demo.substring(0, 20) + '...';
+                document.getElementById('envSsidReal').textContent = FALLBACK_CONFIG.ssid_real.substring(0, 20) + '...';
+                document.getElementById('envTelegramApiId').textContent = FALLBACK_CONFIG.telegram_api_id;
+                document.getElementById('envTelegramApiHash').textContent = '***' + FALLBACK_CONFIG.telegram_api_hash.slice(-4);
+                document.getElementById('envTelegramPhone').textContent = FALLBACK_CONFIG.telegram_phone;
+                document.getElementById('envTelegramChannel').textContent = FALLBACK_CONFIG.telegram_channel;
+                
+                // Pre-fill form fields
+                document.getElementById('phone').value = FALLBACK_CONFIG.telegram_phone;
+                document.getElementById('apiId').value = FALLBACK_CONFIG.telegram_api_id;
+                document.getElementById('apiHash').value = FALLBACK_CONFIG.telegram_api_hash;
+            }
+        }
+        
+        function showSsidForm() {
+            document.getElementById('ssidConfigured').classList.add('hidden');
+            document.getElementById('ssidForm').classList.remove('hidden');
+        }
+        
+        async function saveSsids() {
+            const ssidDemo = document.getElementById('ssidDemo').value;
+            const ssidReal = document.getElementById('ssidReal').value;
+            
+            if (!ssidDemo && !ssidReal) {
+                showAlert('Please enter at least one SSID', 'error');
+                addLog('✗ SSID validation failed: no SSIDs provided', 'error');
+                return;
+            }
+            
+            // Show progress indicator
+            const progressDiv = document.getElementById('ssidConnectionProgress');
+            const progressBar = document.getElementById('ssidProgressBar');
+            const progressText = document.getElementById('ssidProgressText');
+            const progressTime = document.getElementById('ssidProgressTime');
+            const saveBtn = document.getElementById('saveSsidBtn');
+            
+            progressDiv.classList.remove('hidden');
+            saveBtn.disabled = true;
+            saveBtn.classList.add('opacity-50', 'cursor-not-allowed');
+            
+            addLog('🔑 Saving SSID configuration...', 'primary');
+            if (ssidDemo) addLog('📊 Demo SSID provided', 'info');
+            if (ssidReal) addLog('💰 Real SSID provided', 'info');
+            addLog('⏳ Connecting to PocketOption (this may take 15-25 seconds)...', 'info');
+            
+            // Progress animation
+            let elapsed = 0;
+            const startTime = Date.now();
+            const progressInterval = setInterval(() => {
+                elapsed = ((Date.now() - startTime) / 1000).toFixed(1);
+                progressTime.textContent = `Elapsed: ${elapsed}s`;
+                
+                // Simulate progress
+                let progress = 0;
+                if (elapsed < 5) {
+                    progress = (elapsed / 5) * 30;
+                    progressText.textContent = 'Establishing WebSocket connections...';
+                } else if (elapsed < 15) {
+                    progress = 30 + ((elapsed - 5) / 10) * 40;
+                    progressText.textContent = 'Authenticating with SSIDs...';
+                } else {
+                    progress = 70 + ((elapsed - 15) / 10) * 30;
+                    progressText.textContent = 'Finalizing connections...';
+                }
+                
+                progressBar.style.width = Math.min(progress, 95) + '%';
+            }, 100);
+            
+            try {
+                const response = await fetch(`${API_BASE}/ssid`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ 
+                        ssid_demo: ssidDemo || undefined,
+                        ssid_real: ssidReal || undefined
+                    })
+                });
+                
+                clearInterval(progressInterval);
+                const duration = ((Date.now() - startTime) / 1000).toFixed(2);
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    
+                    // Complete progress
+                    progressBar.style.width = '100%';
+                    progressText.textContent = '✓ Connection successful!';
+                    progressTime.textContent = `Completed in ${duration}s`;
+                    
+                    addLog(`✓ SSIDs configured successfully in ${duration}s`, 'success');
+                    if (data.demo_configured) addLog('✓ Demo SSID saved', 'success');
+                    if (data.real_configured) addLog('✓ Real SSID saved', 'success');
+                    
+                    showAlert('SSIDs saved successfully!', 'success');
+                    document.getElementById('ssidDemo').value = '';
+                    document.getElementById('ssidReal').value = '';
+                    
+                    // Hide progress after 2 seconds
+                    setTimeout(() => {
+                        progressDiv.classList.add('hidden');
+                        progressBar.style.width = '0%';
+                        saveBtn.disabled = false;
+                        saveBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+                        loadConfig();
+                    }, 2000);
+                } else {
+                    const data = await response.json();
+                    progressText.textContent = '✗ Connection failed';
+                    progressBar.classList.remove('bg-primary');
+                    progressBar.classList.add('bg-danger');
+                    
+                    addLog(`✗ SSID configuration failed: ${data.error || 'Unknown error'}`, 'error');
+                    showAlert(data.error || 'Failed to save SSIDs', 'error');
+                    
+                    // Hide progress after 3 seconds
+                    setTimeout(() => {
+                        progressDiv.classList.add('hidden');
+                        progressBar.style.width = '0%';
+                        progressBar.classList.remove('bg-danger');
+                        progressBar.classList.add('bg-primary');
+                        saveBtn.disabled = false;
+                        saveBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+                    }, 3000);
+                }
+            } catch (error) {
+                clearInterval(progressInterval);
+                progressText.textContent = '✗ Connection error';
+                progressBar.classList.remove('bg-primary');
+                progressBar.classList.add('bg-danger');
+                
+                addLog('✗ Connection error during SSID configuration', 'error');
+                const errorMsg = handleFetchError(error, 'saveSsids');
+                showAlert(errorMsg, 'error');
+                
+                // Hide progress after 3 seconds
+                setTimeout(() => {
+                    progressDiv.classList.add('hidden');
+                    progressBar.style.width = '0%';
+                    progressBar.classList.remove('bg-danger');
+                    progressBar.classList.add('bg-primary');
+                    saveBtn.disabled = false;
+                    saveBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+                }, 3000);
+            }
+        }
+        
+        async function sendOtpCode() {
+            try {
+                showAlert('Sending OTP code...', 'success');
+                
+                const response = await fetch(`${API_BASE}/telegram/send-code`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' }
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok) {
+                    showAlert(`OTP code sent to ${data.phone}!`, 'success');
+                    document.getElementById('telegramOtpNeeded').classList.add('hidden');
+                    document.getElementById('telegramOtpForm').classList.remove('hidden');
+                } else {
+                    showAlert(data.error || 'Failed to send OTP', 'error');
+                }
+            } catch (error) {
+                const errorMsg = handleFetchError(error, 'sendOtpCode');
+                showAlert(errorMsg, 'error');
+            }
+        }
+        
+        async function verifyOtp() {
+            const code = document.getElementById('otpCode').value;
+            if (!code) {
+                showAlert('Please enter OTP code', 'error');
+                return;
+            }
+            
+            if (code.length < 5) {
+                showAlert('OTP code must be 5 digits', 'error');
+                return;
+            }
+            
+            try {
+                showAlert('Verifying OTP...', 'success');
+                
+                const response = await fetch(`${API_BASE}/telegram/verify-otp`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ code })
+                });
+                
+                if (response.ok) {
+                    showAlert('✅ Telegram session created successfully!', 'success');
+                    document.getElementById('otpCode').value = '';
+                    document.getElementById('telegramOtpForm').classList.add('hidden');
+                    setTimeout(() => loadConfig(), 1000);
+                } else {
+                    const data = await response.json();
+                    showAlert(data.error || 'OTP verification failed', 'error');
+                }
+            } catch (error) {
+                showAlert('Error: ' + error.message, 'error');
+            }
+        }
+        
+        function cancelOtp() {
+            document.getElementById('otpCode').value = '';
+            document.getElementById('telegramOtpForm').classList.add('hidden');
+            document.getElementById('telegramOtpNeeded').classList.remove('hidden');
+        }
+        
+        async function testTelegramConnection() {
+            try {
+                showAlert('Testing Telegram connection...', 'success');
+                
+                const response = await fetch(`${API_BASE}/test/telegram`);
+                const data = await response.json();
+                
+                if (response.ok) {
+                    showAlert(`Connected to ${data.channel}! Found ${data.recent_messages.length} recent messages.`, 'success');
+                } else {
+                    showAlert(data.error || 'Connection test failed', 'error');
+                }
+            } catch (error) {
+                showAlert('Error: ' + error.message, 'error');
+            }
+        }
+        
+        async function deleteTelegramSession() {
+            if (!confirm('Are you sure you want to delete the Telegram session? You will need to verify with OTP again.')) {
+                return;
+            }
+            
+            try {
+                showAlert('Deleting Telegram session...', 'success');
+                
+                const response = await fetch(`${API_BASE}/telegram/delete-session`, {
+                    method: 'POST'
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok) {
+                    showAlert('Session deleted successfully! Please configure again.', 'success');
+                    
+                    // Hide session active status
+                    document.getElementById('telegramStatus').classList.add('hidden');
+                    
+                    // Show OTP needed or form
+                    setTimeout(() => loadConfig(), 1000);
+                } else {
+                    showAlert(data.error || 'Failed to delete session', 'error');
+                }
+            } catch (error) {
+                showAlert('Error: ' + error.message, 'error');
+            }
+        }
+        
+        async function clearAllSessions() {
+            if (!confirm('⚠️ WARNING: This will delete ALL session files and database locks.\n\nYou will need to:\n- Verify Telegram OTP again\n- Reconfigure SSID if needed\n\nAre you sure you want to continue?')) {
+                return;
+            }
+            
+            try {
+                showAlert('Clearing all sessions and locks...', 'success');
+                
+                const response = await fetch(`${API_BASE}/clear-all-sessions`, {
+                    method: 'POST'
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok) {
+                    showAlert(`✅ Cleared successfully! Deleted: ${data.deleted_files.join(', ')}`, 'success');
+                    
+                    // Hide session active status
+                    document.getElementById('telegramStatus').classList.add('hidden');
+                    
+                    // Reload config after 2 seconds
+                    setTimeout(() => {
+                        loadConfig();
+                        showAlert('Please reconfigure Telegram and SSID if needed', 'success');
+                    }, 2000);
+                } else {
+                    showAlert(data.error || 'Failed to clear sessions', 'error');
+                }
+            } catch (error) {
+                const errorMsg = handleFetchError(error, 'clearAllSessions');
+                showAlert(errorMsg, 'error');
+            }
+        }
+        
+        async function saveTelegram() {
+            const phone = document.getElementById('phone').value;
+            const apiId = document.getElementById('apiId').value;
+            const apiHash = document.getElementById('apiHash').value;
+            
+            if (!phone || !apiId || !apiHash) {
+                showAlert('Please fill all Telegram fields', 'error');
+                return;
+            }
+            
+            try {
+                const response = await fetch(`${API_BASE}/telegram/otp`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ phone, api_id: apiId, api_hash: apiHash })
+                });
+                
+                if (response.ok) {
+                    showAlert('Telegram config saved!', 'success');
+                } else {
+                    const data = await response.json();
+                    showAlert(data.error || 'Failed to save config', 'error');
+                }
+            } catch (error) {
+                showAlert('Error: ' + error.message, 'error');
+            }
+        }
+
+        // Trading Functions
+        async function toggleTrading() {
+            const toggle = document.getElementById('tradingToggle');
+            const toggleLabel = document.getElementById('toggleLabel');
+            const statusText = document.getElementById('tradingStatusText');
+            const botStatusBadge = document.getElementById('botStatusBadge');
+            
+            if (toggle.checked) {
+                // Start trading
+                await startTrading();
+                toggleLabel.textContent = 'ON';
+                statusText.textContent = 'Bot is active and monitoring signals';
+            } else {
+                // Stop trading
+                await stopTrading();
+                toggleLabel.textContent = 'OFF';
+                statusText.textContent = 'Bot is paused - not monitoring signals';
+            }
+        }
+        
+        async function startTrading() {
+            const initialAmount = parseFloat(document.getElementById('initialAmount').value);
+            const isDemo = document.getElementById('accountType').value === 'true';
+            const multiplier = parseFloat(document.getElementById('multiplier').value);
+            const martingaleStep = parseInt(document.getElementById('martingaleStep').value);
+            
+            if (initialAmount <= 0) {
+                showAlert('Initial amount must be greater than 0', 'error');
+                addLog('✗ Invalid trade amount: ' + initialAmount, 'error');
+                // Reset toggle
+                document.getElementById('tradingToggle').checked = false;
+                document.getElementById('toggleLabel').textContent = 'OFF';
+                return;
+            }
+            
+            addLog(`🚀 Starting bot - Amount: $${initialAmount}, Type: ${isDemo ? 'DEMO' : 'REAL'}, Multiplier: ${multiplier}x, Step: ${martingaleStep}`, 'primary');
+            
+            try {
+                const response = await fetch(`${API_BASE}/trading/start`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ 
+                        is_demo: isDemo, 
+                        multiplier: multiplier,
+                        martingale_step: martingaleStep
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok) {
+                    showAlert(`Trading started! Current amount: $${data.config.current_trade_amount.toFixed(2)}`, 'success');
+                    document.getElementById('botStatusBadge').textContent = 'ACTIVE';
+                    document.getElementById('botStatusBadge').classList.add('bg-success/20', 'border-success/50', 'text-success');
+                    updateStatus();
+                } else {
+                    showAlert(data.error || 'Failed to start trading', 'error');
+                }
+            } catch (error) {
+                const errorMsg = handleFetchError(error, 'startTrading');
+                showAlert(errorMsg, 'error');
+            }
+        }
+        
+        async function stopTrading() {
+            addLog('⏹️ Stopping bot...', 'warning');
+            try {
+                const response = await fetch(`${API_BASE}/trading/stop`, {
+                    method: 'POST'
+                });
+                
+                if (response.ok) {
+                    addLog('✓ Bot stopped successfully', 'success');
+                    showAlert('Trading stopped!', 'success');
+                    document.getElementById('botStatusBadge').textContent = 'STOPPED';
+                    document.getElementById('botStatusBadge').classList.remove('bg-success/20', 'border-success/50', 'text-success');
+                    updateStatus();
+                } else {
+                    const data = await response.json();
+                    addLog('✗ Failed to stop bot: ' + (data.error || 'Unknown error'), 'error');
+                    showAlert(data.error || 'Failed to stop trading', 'error');
+                }
+            } catch (error) {
+                addLog('✗ Connection error while stopping bot', 'error');
+                const errorMsg = handleFetchError(error, 'stopTrading');
+                showAlert(errorMsg, 'error');
+            }
+        }
+        
+        async function updateStatus() {
+            try {
+                const response = await fetch(`${API_BASE}/trading/status`);
+                const data = await response.json();
+                
+                // Sync toggle with server status
+                const toggle = document.getElementById('tradingToggle');
+                const toggleLabel = document.getElementById('toggleLabel');
+                const statusText = document.getElementById('tradingStatusText');
+                
+                if (data.active) {
+                    // Update toggle
+                    toggle.checked = true;
+                    toggleLabel.textContent = 'ON';
+                    statusText.textContent = 'Bot is active and monitoring signals';
+                    
+                    document.getElementById('connectionStatus').classList.remove('bg-slate-500');
+                    document.getElementById('connectionStatus').classList.add('bg-success', 'animate-pulse');
+                    document.getElementById('connectionText').textContent = 'LIVE MARKET CONNECTED';
+                    document.getElementById('connectionText').classList.remove('text-slate-500');
+                    document.getElementById('connectionText').classList.add('text-success');
+                    
+                    document.getElementById('botHealthStatus').textContent = 'Active';
+                    document.getElementById('botHealthStatus').classList.add('text-success');
+                    document.getElementById('botHealthBar').classList.remove('bg-slate-600');
+                    document.getElementById('botHealthBar').classList.add('bg-success');
+                    document.getElementById('botHealthBar').style.width = '100%';
+                    
+                    document.getElementById('botStatusBadge').textContent = 'ACTIVE';
+                    document.getElementById('botStatusBadge').classList.add('bg-success/20', 'border-success/50', 'text-success');
+                } else {
+                    // Update toggle
+                    toggle.checked = false;
+                    toggleLabel.textContent = 'OFF';
+                    statusText.textContent = 'Bot is paused - not monitoring signals';
+                    
+                    document.getElementById('connectionStatus').classList.remove('bg-success', 'animate-pulse');
+                    document.getElementById('connectionStatus').classList.add('bg-slate-500');
+                    document.getElementById('connectionText').textContent = 'IDLE';
+                    document.getElementById('connectionText').classList.remove('text-success');
+                    document.getElementById('connectionText').classList.add('text-slate-500');
+                    
+                    document.getElementById('botHealthStatus').textContent = 'Idle';
+                    document.getElementById('botHealthStatus').classList.remove('text-success');
+                    document.getElementById('botHealthBar').classList.remove('bg-success');
+                    document.getElementById('botHealthBar').classList.add('bg-slate-600');
+                    
+                    document.getElementById('botStatusBadge').textContent = 'STOPPED';
+                    document.getElementById('botStatusBadge').classList.remove('bg-success/20', 'border-success/50', 'text-success');
+                    document.getElementById('botHealthBar').style.width = '0%';
+                }
+            } catch (error) {
+                console.error('Error updating status:', error);
+            }
+        }
+        
+        async function updateAnalysis() {
+            try {
+                const response = await fetch(`${API_BASE}/trades/analysis`);
+                const data = await response.json();
+                
+                document.getElementById('totalTrades').textContent = data.total_trades || 0;
+                document.getElementById('totalProfit').textContent = '$' + (data.total_profit || 0).toFixed(2);
+                document.getElementById('winRate').textContent = (data.win_rate || 0) + '%';
+                document.getElementById('currentStep').textContent = data.current_step || 0;
+                
+                // Color code profit
+                const profitValue = data.total_profit || 0;
+                const profitElement = document.getElementById('totalProfit');
+                if (profitValue > 0) {
+                    profitElement.style.color = '#10b981'; // success color
+                } else if (profitValue < 0) {
+                    profitElement.style.color = '#e11d48'; // danger color
+                } else {
+                    profitElement.style.color = ''; // default
+                }
+                
+                // Update profit change indicator
+                const profitChange = document.getElementById('profitChange');
+                if (profitValue > 0) {
+                    profitChange.textContent = '+' + ((profitValue / 100) * 100).toFixed(1) + '%';
+                    profitChange.classList.remove('text-danger');
+                    profitChange.classList.add('text-success');
+                } else if (profitValue < 0) {
+                    profitChange.textContent = ((profitValue / 100) * 100).toFixed(1) + '%';
+                    profitChange.classList.remove('text-success');
+                    profitChange.classList.add('text-danger');
+                }
+                
+                // Update win rate bar
+                const winRateValue = data.win_rate || 0;
+                document.getElementById('winRateScore').textContent = winRateValue + '%';
+                document.getElementById('winRateBar').style.width = winRateValue + '%';
+                
+                // Remove old classes
+                document.getElementById('winRateScore').classList.remove('text-success', 'text-primary', 'text-danger');
+                
+                if (winRateValue >= 70) {
+                    document.getElementById('winRateScore').classList.add('text-success');
+                } else if (winRateValue >= 50) {
+                    document.getElementById('winRateScore').classList.add('text-primary');
+                } else {
+                    document.getElementById('winRateScore').classList.add('text-danger');
+                }
+                
+                // Update status text
+                if (data.total_trades > 0) {
+                    document.getElementById('tradesStatus').textContent = 'Active';
+                    document.getElementById('stepStatus').textContent = 'Step ' + (data.current_step || 0);
+                }
+            } catch (error) {
+                console.error('Error updating analysis:', error);
+            }
+        }
+        
+        async function updateBalance() {
+            try {
+                // Check localStorage cache first
+                if (isCacheValid(CACHE_KEYS.BALANCE_TIMESTAMP)) {
+                    const cached = getCachedData(CACHE_KEYS.BALANCE);
+                    if (cached) {
+                        document.getElementById('demoBalance').textContent = '$' + (cached.demo || 0).toFixed(2);
+                        document.getElementById('realBalance').textContent = '$' + (cached.real || 0).toFixed(2);
+                        const currentBalance = cached.demo > 0 ? cached.demo : cached.real;
+                        document.getElementById('currentBalanceDisplay').textContent = '$' + currentBalance.toFixed(2);
+                        return; // Use cache, skip API call
+                    }
+                }
+                
+                const response = await fetch(`${API_BASE}/balance`);
+                const data = await response.json();
+                
+                if (response.ok) {
+                    const demoBalance = data.demo_balance || 0;
+                    const realBalance = data.real_balance || 0;
+                    
+                    document.getElementById('demoBalance').textContent = '$' + demoBalance.toFixed(2);
+                    document.getElementById('realBalance').textContent = '$' + realBalance.toFixed(2);
+                    
+                    // Update current balance display in sidebar
+                    const currentBalance = demoBalance > 0 ? demoBalance : realBalance;
+                    document.getElementById('currentBalanceDisplay').textContent = '$' + currentBalance.toFixed(2);
+                    
+                    // Update account type display
+                    const accountType = document.getElementById('accountType').value === 'true' ? 'DEMO' : 'REAL';
+                    document.getElementById('accountTypeDisplay').textContent = accountType;
+                    
+                    // Cache the balance
+                    setCachedData(CACHE_KEYS.BALANCE, { demo: demoBalance, real: realBalance });
+                    localStorage.setItem(CACHE_KEYS.BALANCE_TIMESTAMP, Date.now().toString());
+                    
+                    // Check for errors or warnings
+                    if (data.error) {
+                        addLog('⚠️ ' + data.error, 'warning');
+                    } else if (data.warning) {
+                        addLog('⚠️ ' + data.warning, 'warning');
+                    } else if (!data.cached) {
+                        addLog(`Balance updated - Demo: $${demoBalance.toFixed(2)}, Real: $${realBalance.toFixed(2)}`, 'success');
+                    }
+                } else {
+                    // Handle error but don't show alert on auto-refresh
+                    addLog('Balance fetch error: ' + (data.error || 'Unknown error'), 'error');
+                    console.error('Balance fetch error:', data.error);
+                }
+            } catch (error) {
+                // On error, try to use cached data
+                const cached = getCachedData(CACHE_KEYS.BALANCE);
+                if (cached) {
+                    addLog('Using cached balance due to connection error', 'warning');
+                } else {
+                    addLog('Failed to connect to server for balance', 'error');
+                }
+                console.error('Error updating balance:', error);
+            }
+        }
+        
+        async function refreshBalance() {
+            const refreshBtn = document.getElementById('refreshBalanceBtn');
+            const btnIcon = refreshBtn.querySelector('.material-symbols-outlined');
+            
+            // Disable button and show loading
+            refreshBtn.disabled = true;
+            refreshBtn.classList.add('opacity-50', 'cursor-not-allowed');
+            btnIcon.classList.add('animate-spin');
+            
+            try {
+                addLog('🔄 Manual balance refresh requested...', 'primary');
+                addLog('⏳ Fetching from PocketOption (20-35s for quality connection)...', 'info');
+                showAlert('Fetching balance from PocketOption...', 'success');
+                
+                const startTime = Date.now();
+                
+                // Show elapsed time in logs
+                const timeInterval = setInterval(() => {
+                    const elapsed = ((Date.now() - startTime) / 1000).toFixed(1);
+                    if (elapsed % 5 === 0) { // Log every 5 seconds
+                        addLog(`⏱️ Still connecting... ${elapsed}s elapsed`, 'info');
+                    }
+                }, 5000);
+                
+                const response = await fetch(`${API_BASE}/balance`);
+                const data = await response.json();
+                
+                clearInterval(timeInterval);
+                const duration = ((Date.now() - startTime) / 1000).toFixed(2);
+                
+                if (response.ok) {
+                    const demoBalance = data.demo_balance || 0;
+                    const realBalance = data.real_balance || 0;
+                    
+                    document.getElementById('demoBalance').textContent = '$' + demoBalance.toFixed(2);
+                    document.getElementById('realBalance').textContent = '$' + realBalance.toFixed(2);
+                    
+                    // Update sidebar
+                    const currentBalance = demoBalance > 0 ? demoBalance : realBalance;
+                    document.getElementById('currentBalanceDisplay').textContent = '$' + currentBalance.toFixed(2);
+                    
+                    // Check for errors
+                    if (data.error) {
+                        addLog(`⚠️ ${data.error}`, 'warning');
+                        showAlert(data.error, 'error');
+                    } else if (data.warning) {
+                        addLog(`⚠️ ${data.warning}`, 'warning');
+                        showAlert(`Balance updated with warnings. Check logs for details.`, 'success');
+                    } else {
+                        addLog(`✓ Balance fetched in ${duration}s - Demo: $${demoBalance.toFixed(2)}, Real: $${realBalance.toFixed(2)}`, 'success');
+                        showAlert(`Balance updated! Demo: $${demoBalance.toFixed(2)}, Real: $${realBalance.toFixed(2)}`, 'success');
+                    }
+                } else {
+                    addLog('✗ Balance fetch failed: ' + (data.error || 'Unknown error'), 'error');
+                    showAlert(data.error || 'Failed to fetch balance', 'error');
+                }
+            } catch (error) {
+                addLog('✗ Connection error during balance fetch', 'error');
+                const errorMsg = handleFetchError(error, 'refreshBalance');
+                showAlert(errorMsg, 'error');
+            } finally {
+                // Re-enable button
+                refreshBtn.disabled = false;
+                refreshBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+                btnIcon.classList.remove('animate-spin');
+            }
+        }
+        
+        async function updateUpcomingCount() {
+            try {
+                const response = await fetch(`${API_BASE}/trades/upcoming`);
+                const data = await response.json();
+                
+                if (response.ok) {
+                    document.getElementById('upcomingCount').textContent = data.total || 0;
+                }
+            } catch (error) {
+                console.error('Error updating upcoming count:', error);
+            }
+        }
+        
+        async function updateConnectionStatus() {
+            try {
+                const response = await fetch(`${API_BASE}/connection/status`);
+                const data = await response.json();
+                
+                if (response.ok) {
+                    // Update demo connection indicator
+                    const demoDot = document.getElementById('demoConnectionDot');
+                    if (data.demo_connected) {
+                        demoDot.classList.remove('bg-slate-500');
+                        demoDot.classList.add('bg-success', 'animate-pulse');
+                    } else {
+                        demoDot.classList.remove('bg-success', 'animate-pulse');
+                        demoDot.classList.add('bg-slate-500');
+                    }
+                    
+                    // Update real connection indicator
+                    const realDot = document.getElementById('realConnectionDot');
+                    if (data.real_connected) {
+                        realDot.classList.remove('bg-slate-500');
+                        realDot.classList.add('bg-success', 'animate-pulse');
+                    } else {
+                        realDot.classList.remove('bg-success', 'animate-pulse');
+                        realDot.classList.add('bg-slate-500');
+                    }
+                }
+            } catch (error) {
+                console.error('Error updating connection status:', error);
+            }
+        }
+
+        async function updateTrades() {
+            try {
+                const response = await fetch(`${API_BASE}/trades/results?limit=10`);
+                const data = await response.json();
+                
+                const tbody = document.getElementById('tradesTableBody');
+                
+                if (data.trades && data.trades.length > 0) {
+                    tbody.innerHTML = data.trades.map(trade => {
+                        const result = trade.result || 'pending';
+                        const isWin = result === 'win';
+                        const isLoss = result === 'loss';
+                        const isClosed = result === 'closed';
+                        
+                        // Status colors and icons
+                        let statusColor, statusBg, statusIcon;
+                        if (isWin) {
+                            statusColor = 'text-success';
+                            statusBg = 'bg-success/10';
+                            statusIcon = 'check_circle';
+                        } else if (isLoss) {
+                            statusColor = 'text-danger';
+                            statusBg = 'bg-danger/10';
+                            statusIcon = 'cancel';
+                        } else if (isClosed) {
+                            statusColor = 'text-warning';
+                            statusBg = 'bg-warning/10';
+                            statusIcon = 'block';
+                        } else {
+                            statusColor = 'text-slate-400';
+                            statusBg = 'bg-slate-400/10';
+                            statusIcon = 'schedule';
+                        }
+                        const directionColor = trade.direction === 'call' ? 'text-success' : 'text-danger';
+                        const directionBg = trade.direction === 'call' ? 'bg-success/10' : 'bg-danger/10';
+                        
+                        return `
+                            <tr class="hover:bg-slate-800/40 transition-colors">
+                                <td class="px-6 py-4 font-bold text-sm">${trade.asset || 'N/A'}</td>
+                                <td class="px-6 py-4 text-xs text-slate-400">${trade.time}</td>
+                                <td class="px-6 py-4">
+                                    <span class="${directionColor} font-bold text-xs ${directionBg} px-2 py-0.5 rounded uppercase">
+                                        ${trade.direction}
+                                    </span>
+                                </td>
+                                <td class="px-6 py-4 text-sm">$${trade.amount.toFixed(2)}</td>
+                                <td class="px-6 py-4 text-sm">${trade.step}</td>
+                                <td class="px-6 py-4">
+                                    <div class="flex items-center gap-2">
+                                        <span class="material-symbols-outlined text-xs ${statusColor}">${statusIcon}</span>
+                                        <span class="text-xs font-medium ${statusColor}">${result.toUpperCase()}</span>
+                                    </div>
+                                </td>
+                                <td class="px-6 py-4 text-right font-bold ${isWin ? 'text-success' : isLoss ? 'text-danger' : 'text-slate-400'}">
+                                    ${isWin ? '+$' + (trade.amount * 0.92).toFixed(2) : isLoss ? '-$' + trade.amount.toFixed(2) : '$0.00'}
+                                </td>
+                            </tr>
+                        `;
+                    }).join('');
+                } else {
+                    tbody.innerHTML = `
+                        <tr>
+                            <td colspan="7" class="px-6 py-8 text-center text-slate-500">
+                                <span class="material-symbols-outlined text-4xl mb-2 opacity-30">inbox</span>
+                                <p>No trades yet. Start the bot to begin trading.</p>
+                            </td>
+                        </tr>
+                    `;
+                }
+            } catch (error) {
+                console.error('Error updating trades:', error);
+            }
+        }
+        
+        // CSV Functions
+        async function loadCsvFiles() {
+            try {
+                const response = await fetch(`${API_BASE}/csv/list`);
+                const data = await response.json();
+                
+                const container = document.getElementById('csvFilesList');
+                
+                if (data.files && data.files.length > 0) {
+                    let html = '<div class="grid grid-cols-1 md:grid-cols-2 gap-4">';
+                    
+                    data.files.forEach(file => {
+                        const fileSize = (file.size / 1024).toFixed(2);
+                        const modifiedDate = new Date(file.modified).toLocaleString();
+                        
+                        html += `
+                            <div onclick="loadCsvData('${file.filename}')" class="glass-card p-6 rounded-xl cursor-pointer hover:border-primary/50 transition-all group">
+                                <div class="flex items-start justify-between">
+                                    <div class="flex items-start gap-3">
+                                        <span class="material-symbols-outlined text-primary text-3xl">description</span>
+                                        <div>
+                                            <p class="font-bold text-slate-100 mb-1">${file.filename}</p>
+                                            <div class="text-xs text-slate-400 space-y-1">
+                                                <p>Date: ${file.date}</p>
+                                                <p>Size: ${fileSize} KB</p>
+                                                <p>Modified: ${modifiedDate}</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <span class="material-symbols-outlined text-slate-600 group-hover:text-primary transition-colors">chevron_right</span>
+                                </div>
+                            </div>
+                        `;
+                    });
+                    
+                    html += '</div>';
+                    container.innerHTML = html;
+                } else {
+                    container.innerHTML = `
+                        <div class="text-center py-12 text-slate-500">
+                            <span class="material-symbols-outlined text-6xl mb-4 opacity-30">folder_open</span>
+                            <p>No CSV files found. Start trading to generate data!</p>
+                        </div>
+                    `;
+                }
+            } catch (error) {
+                console.error('Error loading CSV files:', error);
+                showAlert('Error loading CSV files', 'error');
+            }
+        }
+        
+        async function loadCsvData(filename) {
+            try {
+                currentCsvFile = filename;
+                
+                const response = await fetch(`${API_BASE}/csv/read/${filename}`);
+                const data = await response.json();
+                
+                if (response.ok) {
+                    document.getElementById('csvFileName').textContent = filename;
+                    document.getElementById('csvTotalTrades').textContent = data.statistics.total_trades;
+                    document.getElementById('csvWins').textContent = data.statistics.wins;
+                    document.getElementById('csvLosses').textContent = data.statistics.losses;
+                    document.getElementById('csvWinRate').textContent = data.statistics.win_rate + '%';
+                    
+                    const profit = data.statistics.total_profit;
+                    const profitElement = document.getElementById('csvProfit');
+                    profitElement.textContent = '$' + profit.toFixed(2);
+                    profitElement.className = profit >= 0 ? 'text-xl font-bold text-success' : 'text-xl font-bold text-danger';
+                    
+                    const tbody = document.getElementById('csvTableBody');
+                    tbody.innerHTML = data.trades.map(trade => {
+                        const resultClass = trade.result === 'win' ? 'text-success' : 'text-danger';
+                        const plValue = parseFloat(trade.profit_loss || 0);
+                        const plColor = plValue >= 0 ? 'text-success' : 'text-danger';
+                        
+                        return `
+                            <tr class="hover:bg-slate-800/40 transition-colors">
+                                <td class="px-6 py-4 text-sm">${trade.date}</td>
+                                <td class="px-6 py-4 text-xs text-slate-400">${trade.time}</td>
+                                <td class="px-6 py-4 font-bold text-sm">${trade.asset}</td>
+                                <td class="px-6 py-4 text-sm uppercase">${trade.direction}</td>
+                                <td class="px-6 py-4 text-sm">$${parseFloat(trade.amount).toFixed(2)}</td>
+                                <td class="px-6 py-4 text-sm">${trade.step}</td>
+                                <td class="px-6 py-4 text-sm">${trade.duration} min</td>
+                                <td class="px-6 py-4 font-bold text-sm ${resultClass}">${trade.result.toUpperCase()}</td>
+                                <td class="px-6 py-4 text-right font-bold ${plColor}">$${plValue.toFixed(2)}</td>
+                            </tr>
+                        `;
+                    }).join('');
+                    
+                    document.getElementById('csvDataView').classList.remove('hidden');
+                    document.getElementById('csvDataView').scrollIntoView({ behavior: 'smooth' });
+                } else {
+                    showAlert(data.error || 'Failed to load CSV data', 'error');
+                }
+            } catch (error) {
+                showAlert('Error: ' + error.message, 'error');
+            }
+        }
+        
+        function downloadCsv() {
+            if (currentCsvFile) {
+                window.open(`${API_BASE}/csv/download/${currentCsvFile}`, '_blank');
+            }
+        }
+        
+        function showNotifications() {
+            showAlert('No new notifications', 'success');
+        }
+        
+        async function loadUpcomingTrades() {
+            try {
+                const response = await fetch(`${API_BASE}/trades/upcoming`);
+                const data = await response.json();
+                
+                const container = document.getElementById('upcomingTradesContainer');
+                
+                if (data.trades && data.trades.length > 0) {
+                    let html = '<div class="grid grid-cols-1 md:grid-cols-2 gap-4">';
+                    
+                    data.trades.forEach(trade => {
+                        const directionColor = trade.direction === 'call' ? 'text-success' : 'text-danger';
+                        const directionBg = trade.direction === 'call' ? 'bg-success/10' : 'bg-danger/10';
+                        const directionIcon = trade.direction === 'call' ? 'trending_up' : 'trending_down';
+                        const executionTime = new Date(trade.execution_time).toLocaleString();
+                        
+                        html += `
+                            <div class="glass-card p-6 rounded-xl border border-border-muted">
+                                <div class="flex items-start justify-between mb-4">
+                                    <div>
+                                        <p class="font-bold text-lg mb-1">${trade.asset}</p>
+                                        <p class="text-xs text-slate-400">Execute at: ${executionTime}</p>
+                                    </div>
+                                    <span class="material-symbols-outlined ${directionColor} text-3xl">${directionIcon}</span>
+                                </div>
+                                <div class="grid grid-cols-3 gap-4 text-center">
+                                    <div>
+                                        <p class="text-xs text-slate-400 mb-1">Direction</p>
+                                        <span class="${directionColor} font-bold text-sm ${directionBg} px-3 py-1 rounded uppercase">
+                                            ${trade.direction}
+                                        </span>
+                                    </div>
+                                    <div>
+                                        <p class="text-xs text-slate-400 mb-1">Duration</p>
+                                        <p class="font-bold">${trade.duration} min</p>
+                                    </div>
+                                    <div>
+                                        <p class="text-xs text-slate-400 mb-1">Amount</p>
+                                        <p class="font-bold text-primary">$${trade.amount.toFixed(2)}</p>
+                                    </div>
+                                </div>
+                            </div>
+                        `;
+                    });
+                    
+                    html += '</div>';
+                    container.innerHTML = html;
+                } else {
+                    container.innerHTML = `
+                        <div class="text-center py-12 text-slate-500">
+                            <span class="material-symbols-outlined text-6xl mb-4 opacity-30">inbox</span>
+                            <p>No upcoming signals. Start the bot to receive signals from Telegram.</p>
+                        </div>
+                    `;
+                }
+            } catch (error) {
+                console.error('Error loading upcoming trades:', error);
+                showAlert('Error loading upcoming trades', 'error');
+            }
+        }
+        
+        // Auto-refresh every 2 seconds for status and trades
+        setInterval(() => {
+            updateStatus();
+            updateAnalysis();
+            updateTrades();
+            updateUpcomingCount();
+            updateConnectionStatus(); // Update connection indicators
+        }, 2000);
+        
+        // Auto-refresh balance every 10 seconds (less frequent to avoid API overload)
+        setInterval(() => {
+            updateBalance();
+        }, 10000);
+        
+        // Check server connection every 5 seconds
+        setInterval(() => {
+            checkServerConnection();
+        }, 5000);
+        
+        // Wait for DOM to be fully loaded before initializing
+        document.addEventListener('DOMContentLoaded', function() {
+            // Initial load
+            addLog('🚀 Deep Space Trading Bot initialized', 'success');
+            addLog('Connecting to server...', 'info');
+            
+            // Load cached data first for instant UI
+            loadCachedBalance();
+            loadCachedConfig();
+            
+            // Set initial mode badge
+            updateAccountBadge();
+            
+            checkServerConnection(); // Check server first
+            loadConfig();
+            // DON'T call updateStatus() here - it will turn toggle OFF before auto-start
+            updateAnalysis();
+            updateTrades();
+            updateMartingalePreview();
+            updateBalance();
+            updateUpcomingCount();
+            updateConnectionStatus(); // Check persistent connections
+            
+            // Auto-start trading after 2 seconds (give time for config to load)
+            setTimeout(async () => {
+                console.log('🚀 Auto-start timer triggered');
+                const toggle = document.getElementById('tradingToggle');
+                const isDemo = document.getElementById('accountType').value === 'true';
+                console.log(`Account type: ${isDemo ? 'DEMO' : 'REAL'}, Toggle checked: ${toggle.checked}`);
+                
+                // Check if trading is already active
+                let alreadyActive = false;
+                try {
+                    const statusResponse = await fetch(`${API_BASE}/trading/status`);
+                    if (statusResponse.ok) {
+                        const statusData = await statusResponse.json();
+                        
+                        if (statusData.active) {
+                            console.log('✅ Trading already active, skipping auto-start');
+                            addLog('✓ Trading already active', 'success');
+                            alreadyActive = true;
+                            // Make sure toggle reflects active state
+                            toggle.checked = true;
+                            document.getElementById('toggleLabel').textContent = 'ON';
+                        }
+                    }
+                } catch (error) {
+                    console.error('Error checking status:', error);
+                    // If status check fails, proceed with auto-start anyway
+                }
+                
+                // Only start if toggle is checked AND not already active
+                if (toggle.checked && !alreadyActive) {
+                    addLog(`🤖 Auto-starting trading bot in ${isDemo ? 'DEMO' : 'REAL'} mode...`, 'primary');
+                    console.log('Calling startTrading()...');
+                    startTrading().then(() => {
+                        console.log('✅ startTrading() completed');
+                        addLog('✓ Trading bot started successfully', 'success');
+                        // Now start status updates
+                        updateStatus();
+                    }).catch(err => {
+                        console.error('❌ startTrading() error:', err);
+                        addLog('✗ Auto-start failed: ' + err.message, 'error');
+                        // Reset toggle on error
+                        toggle.checked = false;
+                        document.getElementById('toggleLabel').textContent = 'OFF';
+                        // Start status updates even on error
+                        updateStatus();
+                    });
+                } else if (!toggle.checked) {
+                    console.log('Toggle is OFF, skipping auto-start');
+                    addLog('⏸ Auto-start disabled (toggle is OFF)', 'info');
+                    // Start status updates
+                    updateStatus();
+                } else {
+                    // Already active, start status updates
+                    updateStatus();
+                }
+            }, 2000);
+            
+            // Save config to cache when changed
+            document.getElementById('initialAmount').addEventListener('change', saveTradingConfigToCache);
+            document.getElementById('multiplier').addEventListener('change', saveTradingConfigToCache);
+            document.getElementById('accountType').addEventListener('change', () => {
+                saveTradingConfigToCache();
+                updateAccountBadge();
+            });
+            document.getElementById('martingaleStep').addEventListener('change', saveTradingConfigToCache);
+            
+            // Initialize quick inputs with slider values
+            document.getElementById('quickTradeAmount').value = document.getElementById('initialAmount').value;
+            document.getElementById('quickMultiplier').value = document.getElementById('multiplier').value;
+        });
+    </script>
+</body>
+</html>

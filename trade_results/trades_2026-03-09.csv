@@ -1,0 +1,3 @@
+timestamp,date,time,asset,direction,amount,step,duration,result,profit_loss,balance_before,balance_after,multiplier
+2026-03-09T06:13:48.189220,2026-03-09,06:13:48,AUDCAD_otc,BUY,1.0,0,1,win,0.92,,,2.5
+2026-03-09T06:14:56.884269,2026-03-09,06:14:56,AUDCAD_otc,SELL,1.0,0,1,win,0.92,,,2.5

@@ -1,0 +1,7 @@
+timestamp,date,time,asset,direction,amount,step,duration,result,profit_loss,balance_before,balance_after,multiplier
+2026-03-08T22:04:03.583275,2026-03-08,22:04:03,GBPJPY_otc,BUY,1.0,0,1,win,0.92,,,2.5
+2026-03-08T22:05:52.463473,2026-03-08,22:05:52,GBPJPY_otc,SELL,1.0,0,1,loss,-1.0,,,2.5
+2026-03-08T22:11:50.164812,2026-03-08,22:11:50,GBPJPY_otc,BUY,1.0,0,1,loss,-1.0,,,2.5
+2026-03-08T22:12:52.657205,2026-03-08,22:12:52,GBPJPY_otc,SELL,2.5,1,1,win,2.3,,,2.5
+2026-03-08T22:13:54.795329,2026-03-08,22:13:54,GBPJPY_otc,BUY,1.0,0,1,loss,-1.0,,,2.5
+2026-03-08T22:14:58.944558,2026-03-08,22:14:58,AUDUSD_otc,BUY,2.5,1,1,win,2.3,,,2.5

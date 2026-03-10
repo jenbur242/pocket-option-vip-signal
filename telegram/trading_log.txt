@@ -1,0 +1,42 @@
+
+🔔 NEW MESSAGE from [Test]: 📈 Pair: GBP/JPY OTC
+⌛️ time: 1 min
+📥 Signal received: GBP/JPY OTC - 1 min
+
+🔔 NEW MESSAGE from [Test]: Buy
+🎯 Direction received: BUY
+
+============================================================
+💰 TRADE AMOUNT CALCULATION - STEP 0
+============================================================
+📊 Base Amount (from .env): $5.00
+📈 Multiplier: 2.5x
+🎯 Current Martingale Step: 0
+💵 Formula: $5.00 × (2.5^0)
+✅ FINAL TRADE AMOUNT: $5.00
+============================================================
+
+
+============================================================
+📊 PLACING TRADE
+============================================================
+Asset: GBPJPY_otc
+Direction: BUY
+Amount: $5.00
+Duration: 1 min
+Martingale Step: 0
+============================================================
+✅ Order placed successfully!
+   Order ID: 6f57d4cb-e779-475e-b736-bff165066452
+   Status: active
+   Placed at: 06:56:19
+   Expires at: 06:57:19
+⏳ Waiting for trade 6f57d4cb-e779-475e-b736-bff165066452 result (max 90s)...
+✅ Result: WIN | Profit: $1.85
+
+============================================================
+🎉 WIN! Reset martingale step to 0
+� Next trade amount: $5.00
+💡 Ready for new asset signal
+============================================================
+
