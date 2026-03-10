@@ -420,6 +420,10 @@ def parse_signal(message_text: str) -> Dict:
             signal['duration'] = int(time_match.group(1))
             break
     
+    # Default to 2 minutes if no time found
+    if signal['duration'] is None:
+        signal['duration'] = 2
+    
     # Multiple direction patterns (try in order of specificity)
     direction_patterns = [
         r'^(Buy|Sell)\s*$',                 # Original format
