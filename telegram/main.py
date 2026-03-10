@@ -396,7 +396,7 @@ def parse_signal(message_text: str) -> Dict:
     asset_patterns = [
         r'📈\s*Pair:\s*([A-Z]+/[A-Z]+(?:\s+OTC)?)',  # Original format with emoji
         r'Pair:\s*([A-Z]+/[A-Z]+(?:\s+OTC)?)',       # Without emoji
-        r'([A-Z]+/[A-Z]+(?:\s+OTC)?)',               # Just the pair
+        r'([A-Z]{6,}(?:[A-Z/]+)?)',                  # 6+ letters (EURGBP, EURUSD) or with slash
         r'📈\s*([A-Z]+/[A-Z]+(?:\s+OTC)?)',          # Emoji with pair only
     ]
     
@@ -611,7 +611,7 @@ async def main():
         client = TelegramClient('session_pocket_option_vip', API_ID, API_HASH)
     
     try:
-        await client.start(PHONE_NUMBER)
+        await client.start()
     except Exception as e:
         log_message(f"❌ Telegram connection error: {e}")
         return
