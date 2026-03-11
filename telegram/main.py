@@ -561,6 +561,28 @@ async def cleanup_stale_trades():
 async def main():
     """Main function - Listen to Telegram and place trades"""
     
+    # Check if bot is already running
+    try:
+        import psutil
+        current_pid = os.getpid()
+        python_processes = []
+        
+        for proc in psutil.process_iter(['pid', 'name', 'cmdline']):
+            try:
+                if 'python' in proc.info['name'].lower():
+                    cmdline = ' '.join(proc.info['cmdline'] or [])
+                    if 'main.py' in cmdline and proc.info['pid'] != current_pid:
+                        python_processes.append(proc.info['pid'])
+            except:
+                pass
+        
+        if python_processes:
+            log_message(f"⚠️ Bot is already running (PIDs: {python_processes})")
+            log_message("🛑 Please stop other instances first")
+            return
+    except ImportError:
+        pass  # psutil not available, skip check
+    
     # Pre-connect to PocketOption
     log_message("\n" + "="*60)
     log_message("🤖 POCKET OPTION TRADING BOT")
@@ -607,14 +629,26 @@ async def main():
         log_message("🔐 Using string session")
         client = TelegramClient(StringSession(STRING_SESSION), API_ID, API_HASH)
     else:
-        print("📁 Using file session: session_pocket_option_vip.session")
-        client = TelegramClient('session_pocket_option_vip', API_ID, API_HASH)
+        print("📁 Using file session: po_vip_testing.session")
+        client = TelegramClient('po_vip_testing', API_ID, API_HASH)
     
     try:
         await client.start()
     except Exception as e:
-        log_message(f"❌ Telegram connection error: {e}")
-        return
+        if "database is locked" in str(e).lower():
+            log_message("🔒 Session database locked - retrying...")
+            # Wait a moment and retry once
+            import time
+            time.sleep(2)
+            try:
+                await client.start()
+                log_message("✅ Telegram connection successful on retry!")
+            except Exception as e2:
+                log_message(f"❌ Telegram connection error (retry failed): {e2}")
+                return
+        else:
+            log_message(f"❌ Telegram connection error: {e}")
+            return
     
     # Connect to ALL channels
     channels = []

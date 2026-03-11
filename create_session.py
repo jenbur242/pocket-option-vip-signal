@@ -24,10 +24,10 @@ async def create_new_session():
     print("Creating new Telegram session...")
     print(f"   API ID: {API_ID}")
     print(f"   Phone: {PHONE_NUMBER}")
-    print(f"   Session: session_pocket_option_vip")
+    print(f"   Session: po_vip_testing")
     
     # Create new session
-    client = TelegramClient('session_pocket_option_vip', API_ID, API_HASH)
+    client = TelegramClient('po_vip_testing', API_ID, API_HASH)
     
     try:
         await client.start(PHONE_NUMBER)
