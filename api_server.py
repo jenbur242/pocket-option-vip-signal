@@ -343,7 +343,7 @@ def check_telegram_session():
     """
     try:
         # Check if session file exists
-        session_file = 'session_testpob1234.session'
+        session_file = 'po_vip_testing.session'
         session_file_exists = os.path.exists(session_file)
         
         # Check if string session is in environment
@@ -394,7 +394,7 @@ def send_telegram_code():
         from telethon.sync import TelegramClient
         
         # Create client and send code
-        client = TelegramClient('session_testpob1234', api_id, api_hash)
+        client = TelegramClient('po_vip_testing', api_id, api_hash)
         
         async def send_code():
             await client.connect()
@@ -461,7 +461,7 @@ def verify_telegram_otp():
         from telethon.sync import TelegramClient
         
         # Create client and verify code
-        client = TelegramClient('session_testpob1234', api_id, api_hash)
+        client = TelegramClient('po_vip_testing', api_id, api_hash)
         
         async def verify_code():
             await client.connect()
@@ -498,8 +498,8 @@ def delete_telegram_session():
     """
     try:
         session_files = [
-            'session_testpob1234.session',
-            'session_testpob1234.session-journal'
+            'po_vip_testing.session',
+            'po_vip_testing.session-journal'
         ]
         
         deleted_files = []
@@ -531,8 +531,8 @@ def clear_all_sessions():
     try:
         files_to_delete = [
             # Telegram session files
-            'session_testpob1234.session',
-            'session_testpob1234.session-journal',
+            'po_vip_testing.session',
+            'po_vip_testing.session-journal',
             
             # Any other session files (pattern matching)
             'session_*.session',
@@ -735,7 +735,7 @@ def test_telegram_connection():
                 client = TelegramClient(StringSession(string_session), api_id, api_hash)
                 session_type = 'string'
             else:
-                client = TelegramClient('session_testpob1234', api_id, api_hash)
+                client = TelegramClient('po_vip_testing', api_id, api_hash)
                 session_type = 'file'
             
             await client.connect()
@@ -817,8 +817,8 @@ def get_trading_status():
     """Get current trading status - bot always runs"""
     try:
         # Check if Telegram session exists
-        session_file_exists = os.path.exists('session_testpob1234.session')
-        session_journal_exists = os.path.exists('session_testpob1234.session-journal')
+        session_file_exists = os.path.exists('po_vip_testing.session')
+        session_journal_exists = os.path.exists('po_vip_testing.session-journal')
         
         # Check environment variables
         telegram_configured = bool(
@@ -1151,8 +1151,8 @@ def run_trading_bot():
             
             # Delete session files
             session_files = [
-                'session_testpob1234.session',
-                'session_testpob1234.session-journal'
+                'po_vip_testing.session',
+                'po_vip_testing.session-journal'
             ]
             
             deleted_count = 0

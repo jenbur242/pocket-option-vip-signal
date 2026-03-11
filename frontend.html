@@ -1247,6 +1247,52 @@
         }
 
         // Configuration Functions
+        // Telegram Session Management with Browser Storage
+        function saveTelegramSessionToStorage(sessionData) {
+            try {
+                localStorage.setItem('telegramSession', JSON.stringify({
+                    ...sessionData,
+                    timestamp: Date.now(),
+                    expiresAt: Date.now() + (24 * 60 * 60 * 1000) // 24 hours
+                }));
+                addLog('💾 Telegram session saved to browser storage', 'success');
+            } catch (error) {
+                console.error('Failed to save session to storage:', error);
+                addLog('⚠️ Failed to save session to browser storage', 'warning');
+            }
+        }
+
+        function getTelegramSessionFromStorage() {
+            try {
+                const stored = localStorage.getItem('telegramSession');
+                if (!stored) return null;
+
+                const sessionData = JSON.parse(stored);
+                
+                // Check if session has expired (24 hours)
+                if (Date.now() > sessionData.expiresAt) {
+                    localStorage.removeItem('telegramSession');
+                    addLog('🕐 Browser session expired, cleared storage', 'info');
+                    return null;
+                }
+
+                return sessionData;
+            } catch (error) {
+                console.error('Failed to get session from storage:', error);
+                localStorage.removeItem('telegramSession'); // Clear corrupted data
+                return null;
+            }
+        }
+
+        function clearTelegramSessionFromStorage() {
+            try {
+                localStorage.removeItem('telegramSession');
+                addLog('🗑️ Telegram session cleared from browser storage', 'info');
+            } catch (error) {
+                console.error('Failed to clear session from storage:', error);
+            }
+        }
+
         async function loadConfig() {
             // Hardcoded fallback configuration from .env
             const FALLBACK_CONFIG = {
@@ -1351,7 +1397,8 @@
                         addLog('⚠️ SSIDs not configured - Please add SSIDs in Configuration', 'warning');
                     }
                     
-                    // Load Telegram configuration
+                    // Load Telegram configuration with browser storage optimization
+                    const localSession = getTelegramSessionFromStorage();
                     const sessionResponse = await fetch(`${API_BASE}/telegram/check-session`);
                     const sessionData = await sessionResponse.json();
                     
@@ -1373,8 +1420,9 @@
                         document.getElementById('apiHash').placeholder = '••••••••' + configData.telegram.api_hash.slice(-4);
                     }
                     
+                    // Enhanced session logic with browser storage
                     if (sessionData.session_exists) {
-                        // Session exists - hide all forms, show status
+                        // Server session exists - hide all forms, show status
                         document.getElementById('telegramForm').classList.add('hidden');
                         document.getElementById('telegramOtpNeeded').classList.add('hidden');
                         document.getElementById('telegramOtpForm').classList.add('hidden');
@@ -1384,9 +1432,41 @@
                         document.getElementById('configuredApiId').textContent = telegramApiId || 'Not set';
                         document.getElementById('configuredChannel').textContent = configData.telegram?.channel || FALLBACK_CONFIG.telegram_channel;
                         
+                        // Save to browser storage for future use
+                        saveTelegramSessionToStorage({
+                            session_exists: true,
+                            session_type: sessionData.session_type,
+                            phone: telegramPhone,
+                            api_id: telegramApiId,
+                            channel: configData.telegram?.channel || FALLBACK_CONFIG.telegram_channel
+                        });
+                        
                         // Show session type in logs
                         const sessionType = sessionData.session_type || 'unknown';
-                        addLog(`✓ Telegram session active (${sessionType})`, 'success');
+                        addLog(`✓ Telegram session active (${sessionType}) - saved to browser`, 'success');
+                        
+                    } else if (localSession && localSession.session_exists) {
+                        // No server session but we have browser session - try to restore
+                        addLog('🔄 Server session lost, attempting to restore from browser storage...', 'info');
+                        
+                        // Check if credentials are still configured
+                        if (sessionData.credentials_configured) {
+                            // Show OTP button to restore session
+                            document.getElementById('telegramForm').classList.add('hidden');
+                            document.getElementById('telegramStatus').classList.add('hidden');
+                            document.getElementById('telegramOtpForm').classList.add('hidden');
+                            document.getElementById('telegramOtpNeeded').classList.remove('hidden');
+                            addLog('🔄 Browser session found - click to receive OTP and restore', 'warning');
+                        } else {
+                            // Credentials missing - clear browser storage and show form
+                            clearTelegramSessionFromStorage();
+                            document.getElementById('telegramForm').classList.remove('hidden');
+                            document.getElementById('telegramStatus').classList.add('hidden');
+                            document.getElementById('telegramOtpNeeded').classList.add('hidden');
+                            document.getElementById('telegramOtpForm').classList.add('hidden');
+                            addLog('📝 Credentials changed - please reconfigure Telegram', 'info');
+                        }
+                        
                     } else if (sessionData.needs_otp) {
                         // Credentials configured but no session - show OTP button
                         document.getElementById('telegramForm').classList.add('hidden');
@@ -1603,6 +1683,21 @@
                     showAlert('✅ Telegram session created successfully!', 'success');
                     document.getElementById('otpCode').value = '';
                     document.getElementById('telegramOtpForm').classList.add('hidden');
+                    
+                    // Save session to browser storage after successful verification
+                    const configResponse = await fetch(`${API_BASE}/config`);
+                    const configData = await configResponse.json();
+                    
+                    if (configData.telegram) {
+                        saveTelegramSessionToStorage({
+                            session_exists: true,
+                            session_type: 'file',
+                            phone: configData.telegram.phone,
+                            api_id: configData.telegram.api_id,
+                            channel: configData.telegram.channel
+                        });
+                    }
+                    
                     setTimeout(() => loadConfig(), 1000);
                 } else {
                     const data = await response.json();
@@ -1644,17 +1739,17 @@
             try {
                 showAlert('Deleting Telegram session...', 'success');
                 
+                // Clear browser storage first
+                clearTelegramSessionFromStorage();
+                
                 const response = await fetch(`${API_BASE}/telegram/delete-session`, {
                     method: 'POST'
                 });
                 
-                const data = await response.json();
-                
                 if (response.ok) {
-                    showAlert('Session deleted successfully! Please configure again.', 'success');
-                    
-                    // Hide session active status
-                    document.getElementById('telegramStatus').classList.add('hidden');
+                    const data = await response.json();
+                    showAlert(data.message || '✅ Telegram session deleted successfully!', 'success');
+                    addLog('🗑️ Telegram session deleted from server and browser storage', 'info');
                     
                     // Show OTP needed or form
                     setTimeout(() => loadConfig(), 1000);
@@ -1674,6 +1769,9 @@
             try {
                 showAlert('Clearing all sessions and locks...', 'success');
                 
+                // Clear browser storage first
+                clearTelegramSessionFromStorage();
+                
                 const response = await fetch(`${API_BASE}/clear-all-sessions`, {
                     method: 'POST'
                 });
@@ -1682,6 +1780,7 @@
                 
                 if (response.ok) {
                     showAlert(`✅ Cleared successfully! Deleted: ${data.deleted_files.join(', ')}`, 'success');
+                    addLog('🗑️ All sessions cleared from server and browser storage', 'info');
                     
                     // Hide session active status
                     document.getElementById('telegramStatus').classList.add('hidden');

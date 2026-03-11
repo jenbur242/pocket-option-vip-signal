@@ -162,3 +162,101 @@ Martingale Step: 0
    Placed at: 16:54:06
    Expires at: 16:55:06
 ⏳ Waiting for trade a075d5d3-ff79-4250-ba25-13cc82eb1f9e result (max 150s)...
+
+============================================================
+🤖 POCKET OPTION TRADING BOT
+============================================================
+Channels: 1 channels
+  - Pocket Option Signals VIP (ID: None)
+Account: DEMO
+TRADE_AMOUNT (raw): 5.0
+Initial Amount: $5.0
+Multiplier: 2.5x
+============================================================
+
+============================================================
+📊 MARTINGALE AMOUNT TABLE (8 Steps)
+============================================================
+Step 0: $      5.00
+Step 1: $     12.50
+Step 2: $     31.25
+Step 3: $     78.12
+Step 4: $    195.31
+Step 5: $    488.28
+Step 6: $   1220.70
+Step 7: $   3051.76
+============================================================
+
+🔌 Connecting to PocketOption...
+💰 Balance: $48986.60 USD
+✅ Connected to PocketOption!
+✅ Connected to: Pocket Option Free Vip signals
+📊 Monitoring 1 channel(s)
+📊 Found 50 recent messages across all channels
+🧹 Started automatic stale trade cleanup (every 60s)
+
+⏳ Waiting for signals from ALL channels...
+
+
+============================================================
+🤖 POCKET OPTION TRADING BOT
+============================================================
+Channels: 1 channels
+  - Pocket Option Signals VIP (ID: None)
+Account: DEMO
+TRADE_AMOUNT (raw): 5.0
+Initial Amount: $5.0
+Multiplier: 2.5x
+============================================================
+
+============================================================
+📊 MARTINGALE AMOUNT TABLE (8 Steps)
+============================================================
+Step 0: $      5.00
+Step 1: $     12.50
+Step 2: $     31.25
+Step 3: $     78.12
+Step 4: $    195.31
+Step 5: $    488.28
+Step 6: $   1220.70
+Step 7: $   3051.76
+============================================================
+
+🔌 Connecting to PocketOption...
+💰 Balance: $48986.60 USD
+✅ Connected to PocketOption!
+🔒 Session database locked - retrying...
+❌ Telegram connection error (retry failed): database is locked
+
+🔔 NEW MESSAGE from [Pocket Option Free Vip signals]: CHFJPY
+📥 Signal received: CHFJPY - 2 min
+
+🔔 NEW MESSAGE from [Pocket Option Free Vip signals]: S
+🎯 Direction received: SELL
+
+============================================================
+💰 TRADE AMOUNT CALCULATION - STEP 0
+============================================================
+📊 Base Amount (from .env): $5.00
+📈 Multiplier: 2.5x
+🎯 Current Martingale Step: 0
+💵 Formula: $5.00 × (2.5^0)
+✅ FINAL TRADE AMOUNT: $5.00
+============================================================
+
+
+============================================================
+📊 PLACING TRADE
+============================================================
+Asset: CHFJPY
+Direction: SELL
+Amount: $5.00
+Duration: 2 min
+Martingale Step: 0
+============================================================
+✅ Order placed successfully!
+   Order ID: 7cedcff5-079d-45c6-b94e-c34977666635
+   Status: active
+   Placed at: 16:47:14
+   Expires at: 16:48:14
+⏳ Waiting for trade 7cedcff5-079d-45c6-b94e-c34977666635 result (max 150s)...
