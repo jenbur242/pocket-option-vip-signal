@@ -5,7 +5,6 @@ import sys
 import time
 import csv
 from pathlib import Path
-from dotenv import load_dotenv
 from telethon.sync import TelegramClient
 from telethon.sessions import StringSession
 from telethon.tl.functions.messages import GetHistoryRequest
@@ -20,43 +19,55 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from pocketoptionapi_async import AsyncPocketOptionClient
 from pocketoptionapi_async.models import OrderDirection, OrderStatus
 
-# Load environment variables
-load_dotenv(override=True)  # Force override with .env file if exists
-
 # Hardcoded credentials (directly in Python file)
 API_ID = '34506083'
 API_HASH = '5676893fa1c0fe15eca5dbbceb3ab6a2'
 PHONE_NUMBER = '+12428018500'
-STRING_SESSION = os.getenv('TELEGRAM_STRING_SESSION')  # Still read from .env for session
+STRING_SESSION = ''  # Will be set after session creation
 
 # Hardcoded SSIDs
 SSID_DEMO = '42["auth",{"session":"8kmju1f41cibg1vg5pihe37d7u","isDemo":1,"uid":116040367,"platform":2,"isFastHistory":true,"isOptimized":true}]'
 SSID_REAL = '42["auth",{"session":"a:4:{s:10:\\"session_id\\";s:32:\\"2a8f01f1efeca20cc174c1b75eb6156a\\";s:10:\\"ip_address\\";s:14:\\"172.86.107.247\\";s:10:\\"user_agent\\";s:111:\\"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.36\\";s:13:\\"last_activity\\";i:1772807404;}3fed45de8f1ed072a8cabf7a07571f05","isDemo":0,"uid":116040367,"platform":2,"isFastHistory":true,"isOptimized":true}]'
-
-# Get credentials from environment variables (fallback)
-# API_ID = os.getenv('TELEGRAM_API_ID')
-# API_HASH = os.getenv('TELEGRAM_API_HASH')
-# PHONE_NUMBER = os.getenv('TELEGRAM_PHONE')
-# STRING_SESSION = os.getenv('TELEGRAM_STRING_SESSION')
 
 # Channel usernames and IDs - Monitor Pocket Option VIP Signals channel
 CHANNELS = [
     {'username': 'Pocket_Option_Signals_Vip', 'id': None, 'name': 'Pocket Option Signals VIP'}
 ]
 
-# Trading configuration - Read dynamically
+# Dynamic trading configuration (can be updated via API)
+dynamic_trade_amount = 5.0
+dynamic_multiplier = 2.5
+dynamic_is_demo = True
+dynamic_initial_balance = 10000.0
+
 def get_trade_amount():
-    """Get current trade amount from environment"""
-    # Default changed to 5.0 for Railway deployment
-    return float(os.getenv('TRADE_AMOUNT', '5.0'))
+    """Get current trade amount - dynamic"""
+    return dynamic_trade_amount
 
 def get_multiplier():
-    """Get current multiplier from environment"""
-    return float(os.getenv('MULTIPLIER', '2.5'))
+    """Get multiplier - dynamic"""
+    return dynamic_multiplier
 
 def get_is_demo():
-    """Get current demo mode from environment"""
-    return os.getenv('IS_DEMO', 'True').lower() == 'true'
+    """Get account type - dynamic"""
+    return dynamic_is_demo
+
+def get_initial_balance():
+    """Get initial balance - dynamic"""
+    return dynamic_initial_balance
+
+def update_trading_config(trade_amount=None, multiplier=None, is_demo=None, initial_balance=None):
+    """Update trading configuration dynamically"""
+    global dynamic_trade_amount, dynamic_multiplier, dynamic_is_demo, dynamic_initial_balance
+    
+    if trade_amount is not None:
+        dynamic_trade_amount = float(trade_amount)
+    if multiplier is not None:
+        dynamic_multiplier = float(multiplier)
+    if is_demo is not None:
+        dynamic_is_demo = bool(is_demo)
+    if initial_balance is not None:
+        dynamic_initial_balance = float(initial_balance)
 
 # Global martingale step
 global_martingale_step = 0
@@ -552,6 +563,7 @@ async def cleanup_stale_trades():
 
 async def main():
     """Main function - Listen to Telegram and place trades"""
+    global STRING_SESSION
     
     # Check if bot is already running
     try:
@@ -584,20 +596,12 @@ async def main():
         log_message(f"  - {ch['name']} (ID: {ch['id']})")
     log_message(f"Account: {'DEMO' if get_is_demo() else 'REAL'}")
     
-    # Show exact value from environment
-    trade_amount_raw = os.getenv('TRADE_AMOUNT', 'NOT SET')
+    # Show hardcoded configuration
     trade_amount_parsed = get_trade_amount()
-    log_message(f"TRADE_AMOUNT (raw): {trade_amount_raw}")
+    log_message(f"Trade Amount: ${trade_amount_parsed} (hardcoded)")
     log_message(f"Initial Amount: ${trade_amount_parsed}")
     
-    if trade_amount_raw == 'NOT SET':
-        log_message("WARNING: TRADE_AMOUNT not set in environment!")
-        log_message("Using default value of $1.0")
-    elif trade_amount_parsed == 1.0:
-        log_message("WARNING: TRADE_AMOUNT is set to 1.0")
-        log_message("If you want $5, update environment variable")
-    
-    log_message(f"Multiplier: {get_multiplier()}x")
+    log_message(f"Multiplier: {get_multiplier()}x (hardcoded)")
     log_message("="*60)
     
     # Show martingale calculation table
@@ -620,16 +624,14 @@ async def main():
     if not STRING_SESSION:
         log_message("No string session found - creating new session...")
         await create_session_if_needed()
-        # Reload environment after session creation
-        load_dotenv(override=True)
-        STRING_SESSION = os.getenv('TELEGRAM_STRING_SESSION')
+        # Session will be set by create_session_if_needed function
         
         if not STRING_SESSION:
             log_message("Failed to create session - please check your credentials")
             return
     
     # Connect to Telegram using string session
-    log_message("Using string session from .env")
+    log_message("Using hardcoded string session")
     client = TelegramClient(StringSession(STRING_SESSION), API_ID, API_HASH)
     
     try:
@@ -640,9 +642,7 @@ async def main():
         if not await client.is_user_authorized():
             log_message("String session invalid - recreating session...")
             await create_session_if_needed()
-            # Reload and try again
-            load_dotenv(override=True)
-            STRING_SESSION = os.getenv('TELEGRAM_STRING_SESSION')
+            # Session will be set by create_session_if_needed function
             if STRING_SESSION:
                 client = TelegramClient(StringSession(STRING_SESSION), API_ID, API_HASH)
                 await client.connect()
@@ -716,13 +716,11 @@ async def create_session_if_needed():
         # Create string session
         string_session = StringSession.save(client.session)
         
-        # Save to .env file
-        from dotenv import set_key
-        env_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), '.env')
-        set_key(env_path, 'TELEGRAM_STRING_SESSION', string_session)
-        load_dotenv(override=True)
+        # Set global variable directly
+        global STRING_SESSION
+        STRING_SESSION = string_session
         
-        log_message("✅ String session created and saved to .env")
+        log_message("✅ String session created and set in memory")
         await client.disconnect()
         
     except Exception as e:

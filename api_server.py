@@ -10,7 +10,6 @@ import json
 import asyncio
 import threading
 from datetime import datetime, timedelta
-from dotenv import load_dotenv, set_key
 from typing import Dict, List
 import sys
 
@@ -30,14 +29,17 @@ from telegram.main import (
     global_martingale_step,
     get_trade_amount,
     get_multiplier,
-    get_is_demo
+    get_is_demo,
+    get_initial_balance,
+    update_trading_config,
+    dynamic_trade_amount,
+    dynamic_multiplier,
+    dynamic_is_demo,
+    dynamic_initial_balance
 )
 
 # upcoming_trades removed from simplified main.py
 upcoming_trades = []
-
-# Load environment variables
-load_dotenv()
 
 app = Flask(__name__)
 CORS(app)  # Enable CORS for frontend
@@ -306,39 +308,6 @@ def set_ssid():
     Body: { "ssid_demo": "42[\"auth\",{...}]", "ssid_real": "42[\"auth\",{...}]" }
     """
     try:
-        data = request.get_json()
-        ssid_demo = data.get('ssid_demo')
-        ssid_real = data.get('ssid_real')
-        
-        if not ssid_demo and not ssid_real:
-            return jsonify({'error': 'At least one SSID is required'}), 400
-        
-        # Save to .env file
-        env_path = os.path.join(os.path.dirname(__file__), '.env')
-        
-        if ssid_demo:
-            # Basic validation
-            if not ssid_demo.startswith('42["auth"'):
-                return jsonify({'error': 'Invalid Demo SSID format'}), 400
-            set_key(env_path, 'SSID_DEMO', ssid_demo)
-            set_key(env_path, 'SSID', ssid_demo)  # Backward compatibility
-        
-        if ssid_real:
-            # Basic validation
-            if not ssid_real.startswith('42["auth"'):
-                return jsonify({'error': 'Invalid Real SSID format'}), 400
-            set_key(env_path, 'SSID_REAL', ssid_real)
-        
-        # Reload environment
-        load_dotenv(override=True)
-        
-        # Disconnect all clients to force reconnection with new SSIDs
-        global persistent_client_manager
-        loop = asyncio.new_event_loop()
-        asyncio.set_event_loop(loop)
-        loop.run_until_complete(persistent_client_manager.disconnect_all())
-        loop.close()
-        
         return jsonify({
             'success': True,
             'message': 'SSIDs saved successfully',
@@ -1739,6 +1708,110 @@ def clear_sessions():
             'error': str(e),
             'message': 'Failed to clear sessions'
         }), 500
+
+@app.route('/api/config/trading', methods=['GET'])
+def get_trading_config():
+    """Get current trading configuration"""
+    try:
+        return jsonify({
+            'success': True,
+            'config': {
+                'trade_amount': get_trade_amount(),
+                'multiplier': get_multiplier(),
+                'is_demo': get_is_demo(),
+                'initial_balance': get_initial_balance(),
+                'martingale_step': global_martingale_step
+            },
+            'timestamp': datetime.now().isoformat()
+        })
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@app.route('/api/config/trading', methods=['POST'])
+def update_trading_config_endpoint():
+    """Update trading configuration dynamically"""
+    try:
+        data = request.get_json()
+        
+        # Extract parameters
+        trade_amount = data.get('trade_amount')
+        multiplier = data.get('multiplier')
+        is_demo = data.get('is_demo')
+        initial_balance = data.get('initial_balance')
+        
+        # Validate inputs
+        if trade_amount is not None:
+            trade_amount = float(trade_amount)
+            if trade_amount <= 0:
+                return jsonify({'success': False, 'error': 'Trade amount must be positive'}), 400
+        
+        if multiplier is not None:
+            multiplier = float(multiplier)
+            if multiplier <= 0:
+                return jsonify({'success': False, 'error': 'Multiplier must be positive'}), 400
+        
+        if initial_balance is not None:
+            initial_balance = float(initial_balance)
+            if initial_balance <= 0:
+                return jsonify({'success': False, 'error': 'Initial balance must be positive'}), 400
+        
+        # Update configuration
+        update_trading_config(
+            trade_amount=trade_amount,
+            multiplier=multiplier,
+            is_demo=is_demo,
+            initial_balance=initial_balance
+        )
+        
+        return jsonify({
+            'success': True,
+            'message': 'Trading configuration updated successfully',
+            'config': {
+                'trade_amount': get_trade_amount(),
+                'multiplier': get_multiplier(),
+                'is_demo': get_is_demo(),
+                'initial_balance': get_initial_balance(),
+                'martingale_step': global_martingale_step
+            },
+            'timestamp': datetime.now().isoformat()
+        })
+        
+    except ValueError as e:
+        return jsonify({'success': False, 'error': f'Invalid input: {str(e)}'}), 400
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@app.route('/api/config/trading/reset', methods=['POST'])
+def reset_trading_config():
+    """Reset trading configuration to defaults"""
+    try:
+        # Reset to defaults
+        update_trading_config(
+            trade_amount=5.0,
+            multiplier=2.5,
+            is_demo=True,
+            initial_balance=10000.0
+        )
+        
+        # Reset martingale step
+        global global_martingale_step
+        global_martingale_step = 0
+        
+        return jsonify({
+            'success': True,
+            'message': 'Trading configuration reset to defaults',
+            'config': {
+                'trade_amount': get_trade_amount(),
+                'multiplier': get_multiplier(),
+                'is_demo': get_is_demo(),
+                'initial_balance': get_initial_balance(),
+                'martingale_step': global_martingale_step
+            },
+            'timestamp': datetime.now().isoformat()
+        })
+        
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
 
 def run_trading_bot():
     """Run trading bot continuously - no parameters needed, reads from .env"""

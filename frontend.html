@@ -172,6 +172,56 @@
             margin-bottom: 20px;
         }
 
+        .config-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+
+        .config-item {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .config-item label {
+            font-weight: 600;
+            color: #495057;
+            font-size: 0.9rem;
+        }
+
+        .config-input, .config-select {
+            padding: 10px;
+            border: 2px solid #dee2e6;
+            border-radius: 6px;
+            font-size: 1rem;
+            transition: border-color 0.3s ease;
+        }
+
+        .config-input:focus, .config-select:focus {
+            outline: none;
+            border-color: #007bff;
+            box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.1);
+        }
+
+        .config-buttons {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin-bottom: 15px;
+        }
+
+        .config-status {
+            padding: 10px;
+            border-radius: 6px;
+            font-size: 0.9rem;
+            min-height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
         .stat-item {
             text-align: center;
             padding: 20px;
@@ -275,6 +325,38 @@
                 </div>
             </div>
             <button class="btn" onclick="fetchBalance()">🔄 Refresh Balance</button>
+        </div>
+
+        <!-- Trading Configuration Card -->
+        <div class="card">
+            <h3>⚙️ Trading Configuration</h3>
+            <div class="config-grid">
+                <div class="config-item">
+                    <label for="trade-amount">Initial Trade Amount ($)</label>
+                    <input type="number" id="trade-amount" min="1" step="0.1" value="5.0" class="config-input">
+                </div>
+                <div class="config-item">
+                    <label for="multiplier">Martingale Multiplier</label>
+                    <input type="number" id="multiplier" min="1" step="0.1" value="2.5" class="config-input">
+                </div>
+                <div class="config-item">
+                    <label for="initial-balance">Initial Balance ($)</label>
+                    <input type="number" id="initial-balance" min="100" step="100" value="10000" class="config-input">
+                </div>
+                <div class="config-item">
+                    <label for="account-mode">Account Mode</label>
+                    <select id="account-mode" class="config-select">
+                        <option value="true">Demo Account</option>
+                        <option value="false">Real Account</option>
+                    </select>
+                </div>
+            </div>
+            <div class="config-buttons">
+                <button class="btn" onclick="updateTradingConfig()">💾 Save Config</button>
+                <button class="btn" onclick="resetTradingConfig()">🔄 Reset to Defaults</button>
+                <button class="btn" onclick="loadTradingConfig()">🔄 Load Current</button>
+            </div>
+            <div id="config-status" class="config-status"></div>
         </div>
 
         <!-- Session Status Card -->
@@ -860,6 +942,124 @@
             }
         }
 
+        // Trading Configuration Functions
+        async function loadTradingConfig() {
+            try {
+                const result = await apiCall('/api/config/trading', 'GET');
+                
+                if (result.success) {
+                    const config = result.config;
+                    
+                    // Update form fields
+                    document.getElementById('trade-amount').value = config.trade_amount;
+                    document.getElementById('multiplier').value = config.multiplier;
+                    document.getElementById('initial-balance').value = config.initial_balance;
+                    document.getElementById('account-mode').value = config.is_demo.toString();
+                    
+                    updateConfigStatus('Configuration loaded successfully', 'success');
+                } else {
+                    updateConfigStatus('Failed to load configuration', 'error');
+                }
+            } catch (error) {
+                updateConfigStatus(`Error loading configuration: ${error.message}`, 'error');
+            }
+        }
+
+        async function updateTradingConfig() {
+            try {
+                // Get values from form
+                const tradeAmount = parseFloat(document.getElementById('trade-amount').value);
+                const multiplier = parseFloat(document.getElementById('multiplier').value);
+                const initialBalance = parseFloat(document.getElementById('initial-balance').value);
+                const isDemo = document.getElementById('account-mode').value === 'true';
+                
+                // Validate inputs
+                if (tradeAmount <= 0) {
+                    updateConfigStatus('Trade amount must be positive', 'error');
+                    return;
+                }
+                
+                if (multiplier <= 0) {
+                    updateConfigStatus('Multiplier must be positive', 'error');
+                    return;
+                }
+                
+                if (initialBalance <= 0) {
+                    updateConfigStatus('Initial balance must be positive', 'error');
+                    return;
+                }
+                
+                updateConfigStatus('Saving configuration...', 'info');
+                
+                const result = await apiCall('/api/config/trading', 'POST', {
+                    trade_amount: tradeAmount,
+                    multiplier: multiplier,
+                    is_demo: isDemo,
+                    initial_balance: initialBalance
+                });
+                
+                if (result.success) {
+                    updateConfigStatus('Configuration saved successfully!', 'success');
+                    
+                    // Update mode indicator if account mode changed
+                    if (isDemo !== get_is_demo()) {
+                        // Force refresh of other components
+                        setTimeout(() => {
+                            fetchBalance();
+                            refreshStatus();
+                        }, 500);
+                    }
+                } else {
+                    updateConfigStatus(`Failed to save configuration: ${result.error}`, 'error');
+                }
+            } catch (error) {
+                updateConfigStatus(`Error saving configuration: ${error.message}`, 'error');
+            }
+        }
+
+        async function resetTradingConfig() {
+            try {
+                updateConfigStatus('Resetting configuration...', 'info');
+                
+                const result = await apiCall('/api/config/trading/reset', 'POST');
+                
+                if (result.success) {
+                    // Update form fields with reset values
+                    const config = result.config;
+                    document.getElementById('trade-amount').value = config.trade_amount;
+                    document.getElementById('multiplier').value = config.multiplier;
+                    document.getElementById('initial-balance').value = config.initial_balance;
+                    document.getElementById('account-mode').value = config.is_demo.toString();
+                    
+                    updateConfigStatus('Configuration reset to defaults', 'success');
+                    
+                    // Refresh other components
+                    setTimeout(() => {
+                        fetchBalance();
+                        refreshStatus();
+                    }, 500);
+                } else {
+                    updateConfigStatus(`Failed to reset configuration: ${result.error}`, 'error');
+                }
+            } catch (error) {
+                updateConfigStatus(`Error resetting configuration: ${error.message}`, 'error');
+            }
+        }
+
+        function updateConfigStatus(message, type) {
+            const statusDiv = document.getElementById('config-status');
+            statusDiv.textContent = message;
+            statusDiv.className = `config-status alert-${type}`;
+            
+            // Auto-clear success messages after 3 seconds
+            if (type === 'success') {
+                setTimeout(() => {
+                    statusDiv.textContent = '';
+                    statusDiv.className = 'config-status';
+                }, 3000);
+            }
+        }
+
         // Balance Functions
         async function fetchBalance() {
             try {
@@ -1019,6 +1219,7 @@
             checkSession();
             fetchBalance();
             refreshStatus();
+            loadTradingConfig();
             
             // Auto-refresh every 30 seconds
             setInterval(() => {
