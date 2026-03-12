@@ -75,16 +75,12 @@ class PersistentClientManager:
         
     def get_ssid_for_mode(self, is_demo: bool):
         """Get appropriate SSID based on mode"""
+        from telegram.main import SSID_DEMO, SSID_REAL
+        
         if is_demo:
-            ssid = os.getenv('SSID_DEMO') or os.getenv('SSID')
-            if not ssid:
-                raise Exception("SSID_DEMO not configured in .env")
-            return ssid
+            return SSID_DEMO
         else:
-            ssid = os.getenv('SSID_REAL')
-            if not ssid:
-                raise Exception("SSID_REAL not configured in .env. Please add your Real account SSID.")
-            return ssid
+            return SSID_REAL
         
     async def get_client_for_mode(self, is_demo: bool):
         """Get client based on trading mode (demo or real)"""
@@ -555,8 +551,9 @@ def check_telegram_session():
         session_file = 'po_vip_testing.session'
         session_file_exists = os.path.exists(session_file)
         
-        # Check if string session is in environment
-        session_env_exists = bool(os.getenv('TELEGRAM_STRING_SESSION'))
+        # Check if string session is set in main.py
+        from telegram.main import STRING_SESSION, API_ID, API_HASH, PHONE_NUMBER
+        session_env_exists = bool(STRING_SESSION)
         
         # Session exists if either file exists or string session is set
         session_exists = session_file_exists or session_env_exists
@@ -568,22 +565,21 @@ def check_telegram_session():
         elif session_env_exists:
             session_type = 'string'
         
-        # Check if credentials are configured
-        api_id = os.getenv('TELEGRAM_API_ID')
-        api_hash = os.getenv('TELEGRAM_API_HASH')
-        phone = os.getenv('TELEGRAM_PHONE')
-        
-        credentials_configured = bool(api_id and api_hash and phone)
+        # Check if credentials are configured (using hardcoded values)
+        credentials_configured = bool(API_ID and API_HASH and PHONE_NUMBER)
         
         return jsonify({
+            'success': True,
             'session_exists': session_exists,
-            'credentials_configured': credentials_configured,
-            'needs_otp': credentials_configured and not session_exists,
-            'phone': phone if phone else None,
             'session_type': session_type,
-            'string_session_exists': session_env_exists
+            'string_session_exists': session_env_exists,
+            'session_file_exists': session_file_exists,
+            'credentials_configured': credentials_configured,
+            'phone': PHONE_NUMBER,
+            'api_id': API_ID,
+            'api_hash': API_HASH[-4:] if API_HASH else None  # Only show last 4 chars
         })
-    
+        
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
@@ -593,23 +589,22 @@ def send_telegram_code():
     Send OTP code to phone number
     """
     try:
-        api_id = os.getenv('TELEGRAM_API_ID')
-        api_hash = os.getenv('TELEGRAM_API_HASH')
-        phone = os.getenv('TELEGRAM_PHONE')
+        # Use hardcoded credentials from main.py
+        from telegram.main import API_ID, API_HASH, PHONE_NUMBER
         
-        if not all([api_id, api_hash, phone]):
-            return jsonify({'error': 'Telegram credentials not configured in .env'}), 400
+        if not all([API_ID, API_HASH, PHONE_NUMBER]):
+            return jsonify({'error': 'Telegram credentials not configured'}), 400
         
         # Import Telethon
         from telethon.sync import TelegramClient
         
         # Create client and send code
-        client = TelegramClient('po_vip_testing', api_id, api_hash)
+        client = TelegramClient('po_vip_testing', API_ID, API_HASH)
         
         async def send_code():
             await client.connect()
             if not await client.is_user_authorized():
-                result = await client.send_code_request(phone)
+                result = await client.send_code_request(PHONE_NUMBER)
                 await client.disconnect()
                 return result.phone_code_hash
             else:
@@ -1814,21 +1809,19 @@ def reset_trading_config():
         return jsonify({'success': False, 'error': str(e)}), 500
 
 def run_trading_bot():
-    """Run trading bot continuously - no parameters needed, reads from .env"""
+    """Run trading bot continuously - uses dynamic configuration"""
     global trading_active
     
     loop = None
     try:
-        # Read all config from .env
-        load_dotenv(override=True)
-        
+        # Get configuration from dynamic functions
         trade_amount = get_trade_amount()
         is_demo = get_is_demo()
         multiplier = get_multiplier()
-        martingale_step = int(os.getenv('MARTINGALE_STEP', '0'))
+        martingale_step = global_martingale_step
         
         print(f"START: Starting trading bot with config:")
-        print(f"   Trade Amount: ${trade_amount} (from .env)")
+        print(f"   Trade Amount: ${trade_amount} (dynamic)")
         print(f"   Account Type: {'DEMO' if is_demo else 'REAL'}")
         print(f"   Multiplier: {multiplier}x")
         print(f"   Starting Martingale Step: {martingale_step}")

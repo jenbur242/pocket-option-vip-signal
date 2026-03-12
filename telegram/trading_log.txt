@@ -1112,3 +1112,213 @@ Bot is already running (PIDs: [2740])
 Please stop other instances first
 Bot is already running (PIDs: [13180])
 Please stop other instances first
+
+============================================================
+POCKET OPTION TRADING BOT
+============================================================
+Channels: 1 channels
+  - Pocket Option Signals VIP (ID: None)
+Account: DEMO
+Trade Amount: $5.0 (hardcoded)
+Initial Amount: $5.0
+Multiplier: 2.5x (hardcoded)
+============================================================
+
+============================================================
+MARTINGALE AMOUNT TABLE (8 Steps)
+============================================================
+Step 0: $      5.00
+Step 1: $     12.50
+Step 2: $     31.25
+Step 3: $     78.12
+Step 4: $    195.31
+Step 5: $    488.28
+Step 6: $   1220.70
+Step 7: $   3051.76
+============================================================
+
+Connecting to PocketOption...
+Balance: $49106.57 USD
+Connected to PocketOption!
+No string session found - creating new session...
+📱 Creating new Telegram session...
+   Phone: +12428018500
+   API ID: 34506083
+
+============================================================
+POCKET OPTION TRADING BOT
+============================================================
+Channels: 1 channels
+  - Pocket Option Signals VIP (ID: None)
+Account: DEMO
+Trade Amount: $5.0 (hardcoded)
+Initial Amount: $5.0
+Multiplier: 2.5x (hardcoded)
+============================================================
+
+============================================================
+MARTINGALE AMOUNT TABLE (8 Steps)
+============================================================
+Step 0: $      5.00
+Step 1: $     12.50
+Step 2: $     31.25
+Step 3: $     78.12
+Step 4: $    195.31
+Step 5: $    488.28
+Step 6: $   1220.70
+Step 7: $   3051.76
+============================================================
+
+Connecting to PocketOption...
+Balance: $49106.57 USD
+Connected to PocketOption!
+No string session found - creating new session...
+📱 Creating new Telegram session...
+   Phone: +12428018500
+   API ID: 34506083
+📲 Sending OTP code...
+✅ OTP sent to +12428018500
+🔢 Please enter OTP code manually:
+   Option 1: Use frontend to enter OTP
+   Option 2: Enter OTP here directly
+
+============================================================
+POCKET OPTION TRADING BOT
+============================================================
+Channels: 1 channels
+  - Pocket Option Signals VIP (ID: None)
+Account: DEMO
+Trade Amount: $5.0 (hardcoded)
+Initial Amount: $5.0
+Multiplier: 2.5x (hardcoded)
+============================================================
+
+============================================================
+MARTINGALE AMOUNT TABLE (8 Steps)
+============================================================
+Step 0: $      5.00
+Step 1: $     12.50
+Step 2: $     31.25
+Step 3: $     78.12
+Step 4: $    195.31
+Step 5: $    488.28
+Step 6: $   1220.70
+Step 7: $   3051.76
+============================================================
+
+Connecting to PocketOption...
+Balance: $49106.57 USD
+Connected to PocketOption!
+No string session found - creating new session...
+📱 Creating new Telegram session...
+   Phone: +12428018500
+   API ID: 34506083
+📲 Sending OTP code...
+✅ OTP sent to +12428018500
+🔢 Please enter OTP code manually:
+   Option 1: Use frontend to enter OTP
+   Option 2: Enter OTP here directly
+🔓 Verifying OTP: 85061
+❌ OTP verification failed: AuthMethods.sign_in() takes from 1 to 3 positional arguments but 4 were given
+Failed to create session - please check your credentials
+
+============================================================
+POCKET OPTION TRADING BOT
+============================================================
+Channels: 1 channels
+  - Pocket Option Signals VIP (ID: None)
+Account: DEMO
+Trade Amount: $5.0 (hardcoded)
+Initial Amount: $5.0
+Multiplier: 2.5x (hardcoded)
+============================================================
+
+============================================================
+MARTINGALE AMOUNT TABLE (8 Steps)
+============================================================
+Step 0: $      5.00
+Step 1: $     12.50
+Step 2: $     31.25
+Step 3: $     78.12
+Step 4: $    195.31
+Step 5: $    488.28
+Step 6: $   1220.70
+Step 7: $   3051.76
+============================================================
+
+Connecting to PocketOption...
+
+============================================================
+POCKET OPTION TRADING BOT
+============================================================
+Channels: 1 channels
+  - Pocket Option Signals VIP (ID: None)
+Account: DEMO
+Trade Amount: $5.0 (hardcoded)
+Initial Amount: $5.0
+Multiplier: 2.5x (hardcoded)
+============================================================
+
+============================================================
+MARTINGALE AMOUNT TABLE (8 Steps)
+============================================================
+Step 0: $      5.00
+Step 1: $     12.50
+Step 2: $     31.25
+Step 3: $     78.12
+Step 4: $    195.31
+Step 5: $    488.28
+Step 6: $   1220.70
+Step 7: $   3051.76
+============================================================
+
+Connecting to PocketOption...
+Balance: $49106.57 USD
+Connected to PocketOption!
+No string session found - creating new session...
+📱 Creating new Telegram session...
+   Phone: +12428018500
+   API ID: 34506083
+📲 Sending OTP code...
+✅ OTP sent to +12428018500
+🔢 Please enter OTP code manually:
+   Option 1: Use frontend to enter OTP
+   Option 2: Enter OTP here directly
+
+============================================================
+POCKET OPTION TRADING BOT
+============================================================
+Channels: 1 channels
+  - Pocket Option Signals VIP (ID: None)
+Account: DEMO
+Trade Amount: $5.0 (hardcoded)
+Initial Amount: $5.0
+Multiplier: 2.5x (hardcoded)
+============================================================
+
+============================================================
+MARTINGALE AMOUNT TABLE (8 Steps)
+============================================================
+Step 0: $      5.00
+Step 1: $     12.50
+Step 2: $     31.25
+Step 3: $     78.12
+Step 4: $    195.31
+Step 5: $    488.28
+Step 6: $   1220.70
+Step 7: $   3051.76
+============================================================
+
+Connecting to PocketOption...
+Balance: $49106.57 USD
+Connected to PocketOption!
+No string session found - creating new session...
+📱 Creating new Telegram session...
+   Phone: +12428018500
+   API ID: 34506083
+📲 Sending OTP code...
+✅ OTP sent to +12428018500
+🔢 Please enter OTP code manually:
+   Option 1: Use frontend to enter OTP
+   Option 2: Enter OTP here directly
+❌ OTP verification failed: 
