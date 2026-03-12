@@ -53,6 +53,8 @@ trade_results = []  # Store all trade results
 temp_phone_code_hash = None  # Temporary storage for OTP verification
 active_client = None  # Store active PocketOption client
 client_balance = {'demo': 0, 'real': 0}  # Cache balance
+data_mode = 'real'  # Global data mode: 'real' or 'dummy'
+dummy_data_cache = {}  # Cache for dummy data
 
 # Persistent client management
 class PersistentClientManager:
@@ -111,18 +113,18 @@ class PersistentClientManager:
             try:
                 # Test connection
                 await asyncio.wait_for(self.demo_client.get_balance(), timeout=2.0)
-                print("✅ Reusing existing demo client connection")
+                print("SUCCESS: Reusing existing demo client connection")
                 return self.demo_client
             except:
-                print("⚠️ Demo client connection lost, reconnecting...")
+                print("WARNING: Demo client connection lost, reconnecting...")
                 self.demo_connected = False
         
         # Create new client
-        print("🔌 Creating new demo client connection...")
+        print("CONNECT: Creating new demo client connection...")
         self.demo_client = AsyncPocketOptionClient(ssid=ssid, is_demo=True)
         await asyncio.wait_for(self.demo_client.connect(), timeout=20.0)
         self.demo_connected = True
-        print("✅ Demo client connected")
+        print("SUCCESS: Demo client connected")
         return self.demo_client
     
     async def get_real_client(self, ssid: str):
@@ -146,18 +148,18 @@ class PersistentClientManager:
             try:
                 # Test connection
                 await asyncio.wait_for(self.real_client.get_balance(), timeout=2.0)
-                print("✅ Reusing existing real client connection")
+                print("SUCCESS: Reusing existing real client connection")
                 return self.real_client
             except:
-                print("⚠️ Real client connection lost, reconnecting...")
+                print("WARNING: Real client connection lost, reconnecting...")
                 self.real_connected = False
         
         # Create new client
-        print("🔌 Creating new real client connection...")
+        print("CONNECT: Creating new real client connection...")
         self.real_client = AsyncPocketOptionClient(ssid=ssid, is_demo=False)
         await asyncio.wait_for(self.real_client.connect(), timeout=20.0)
         self.real_connected = True
-        print("✅ Real client connected")
+        print("SUCCESS: Real client connected")
         return self.real_client
     
     async def disconnect_all(self):
@@ -554,7 +556,7 @@ def complete_auto_session():
             })
             
         except Exception as e:
-            logger.error(f"❌ Auto-session completion failed: {e}")
+            logger.error(f"ERROR: Auto-session completion failed: {e}")
             return jsonify({'error': f'Failed to complete auto-session: {str(e)}'}), 500
             
     except Exception as e:
@@ -773,7 +775,7 @@ def verify_telegram_otp():
                     if os.path.exists(session_file + '-journal'):
                         os.remove(session_file + '-journal')
                     
-                    log_message("✅ String session saved to .env file")
+                    log_message("SUCCESS: String session saved to .env file")
                     
                 else:
                     temp_client.disconnect()
@@ -896,6 +898,35 @@ def clear_all_sessions():
     
     except Exception as e:
         return jsonify({'error': f'Failed to clear sessions: {str(e)}'}), 500
+
+@app.route('/api/telegram/session', methods=['POST'])
+def set_telegram_session():
+    """
+    Set Telegram string session from browser
+    Body: { "string_session": "..." }
+    """
+    try:
+        data = request.get_json()
+        string_session = data.get('string_session')
+        
+        if not string_session:
+            return jsonify({'error': 'No string session provided'}), 400
+        
+        # Save to .env file
+        env_path = os.path.join(os.path.dirname(__file__), '.env')
+        set_key(env_path, 'TELEGRAM_STRING_SESSION', string_session)
+        load_dotenv(override=True)
+        
+        logger.info("Telegram string session saved from browser")
+        
+        return jsonify({
+            'success': True,
+            'message': 'Session saved successfully'
+        })
+        
+    except Exception as e:
+        logger.error(f"Error saving session: {e}")
+        return jsonify({'error': f'Failed to save session: {str(e)}'}), 500
 
 @app.route('/api/telegram/otp', methods=['POST'])
 def send_otp():
@@ -1156,18 +1187,38 @@ def get_trading_status():
     
     except Exception as e:
         return jsonify({'error': str(e)}), 500
-
+    
 @app.route('/api/trades/results', methods=['GET'])
 def get_trade_results():
-    """
-    Get trade results with pagination and proper data structure
-    Query params: ?limit=50&offset=0
-    """
+    """Get trade results with pagination (real or dummy data)"""
     try:
+        global past_trades, data_mode, dummy_data_cache
+        
+        # Get pagination parameters
         limit = int(request.args.get('limit', 50))
         offset = int(request.args.get('offset', 0))
         
-        # Get trades from past_trades (imported from telegram.main)
+        # Check if we're in dummy mode
+        if data_mode == 'dummy':
+            # Generate or return cached dummy trades
+            if 'trades' not in dummy_data_cache:
+                dummy_data_cache['trades'] = generate_dummy_trade_results()
+            
+            dummy_trades = dummy_data_cache['trades']
+            total = len(dummy_trades)
+            
+            # Get paginated trades
+            trades_slice = dummy_trades[offset:offset + limit]
+            
+            return jsonify({
+                'total': total,
+                'limit': limit,
+                'offset': offset,
+                'trades': trades_slice,
+                'mode': 'dummy'
+            })
+        
+        # Real mode - use existing logic
         total = len(past_trades)
         
         # Get paginated trades
@@ -1189,7 +1240,7 @@ def get_trade_results():
             }
             
             # Calculate profit based on result
-            result = trade.get('result', 'pending')
+            result = trade.get('result')
             amount = trade.get('amount', 0)
             
             if result == 'win':
@@ -1198,6 +1249,7 @@ def get_trade_results():
             elif result == 'loss':
                 formatted_trade['profit'] = round(-amount, 2)
             elif result == 'draw':
+                # Draw returns the stake (no profit/loss)
                 formatted_trade['profit'] = 0
             else:  # pending or failed
                 formatted_trade['profit'] = 0
@@ -1208,11 +1260,12 @@ def get_trade_results():
             'total': total,
             'limit': limit,
             'offset': offset,
-            'trades': formatted_trades
+            'trades': formatted_trades,
+            'mode': 'real'
         })
     
     except Exception as e:
-        print(f"❌ Error getting trade results: {e}")
+        print(f"ERROR: Error getting trade results: {e}")
         import traceback
         traceback.print_exc()
         return jsonify({'error': str(e)}), 500
@@ -1233,8 +1286,26 @@ def get_upcoming_trades():
 
 @app.route('/api/trades/analysis', methods=['GET'])
 def get_trade_analysis():
-    """Get trade analysis and statistics with proper result tracking"""
+    """Get trade analysis and statistics (real or dummy data)"""
     try:
+        global past_trades, data_mode, dummy_data_cache, global_martingale_step
+        
+        # Check if we're in dummy mode
+        if data_mode == 'dummy':
+            # Generate or return cached dummy analysis
+            if 'analysis' not in dummy_data_cache:
+                dummy_data_cache['analysis'] = generate_dummy_analysis()
+            else:
+                # Slightly modify cached data to simulate changes
+                import random
+                cached = dummy_data_cache['analysis'].copy()
+                cached['total_profit'] = round(cached['total_profit'] + random.uniform(-5, 5), 2)
+                cached['current_trade_amount'] = round(random.uniform(1, 50) * (2.5 ** cached['current_step']), 2)
+                dummy_data_cache['analysis'] = cached
+            
+            return dummy_data_cache['analysis']
+        
+        # Real mode - use existing logic
         if not past_trades:
             return jsonify({
                 'total_trades': 0,
@@ -1247,7 +1318,8 @@ def get_trade_analysis():
                 'win_rate': 0,
                 'total_profit': 0,
                 'current_step': global_martingale_step,
-                'current_trade_amount': get_trade_amount() * (get_multiplier() ** global_martingale_step)
+                'current_trade_amount': get_trade_amount() * (get_multiplier() ** global_martingale_step),
+                'mode': 'real'
             })
         
         # Count all result types
@@ -1292,75 +1364,93 @@ def get_trade_analysis():
             'win_rate': round(win_rate, 2),
             'total_profit': round(total_profit, 2),
             'current_step': global_martingale_step,
-            'current_trade_amount': round(get_trade_amount() * (get_multiplier() ** global_martingale_step), 2)
+            'current_trade_amount': round(get_trade_amount() * (get_multiplier() ** global_martingale_step), 2),
+            'mode': 'real'
         })
     
     except Exception as e:
-        print(f"❌ Error in trade analysis: {e}")
+        print(f"ERROR: Error in trade analysis: {e}")
         import traceback
         traceback.print_exc()
         return jsonify({'error': str(e)}), 500
 
 @app.route('/api/balance', methods=['GET'])
 def get_balance():
-    """Get current account balance from PocketOption"""
+    """Get current account balance from PocketOption or dummy data"""
     try:
-        global client_balance, persistent_client_manager
+        global client_balance, persistent_client_manager, data_mode, dummy_data_cache
         
-        # Check cache age (cache for 5 seconds)
+        # Check if we're in dummy mode
+        if data_mode == 'dummy':
+            # Generate or return cached dummy data
+            if 'balance' not in dummy_data_cache:
+                dummy_data_cache['balance'] = generate_dummy_balance()
+            else:
+                # Slightly modify cached data to simulate changes
+                import random
+                cached = dummy_data_cache['balance'].copy()
+                cached['demo_balance'] = round(cached['demo_balance'] + random.uniform(-10, 10), 2)
+                cached['real_balance'] = round(cached['real_balance'] + random.uniform(-5, 5), 2)
+                cached['timestamp'] = datetime.now().isoformat()
+                dummy_data_cache['balance'] = cached
+            
+            return jsonify(dummy_data_cache['balance'])
+        
+        # Real mode - check cache age (cache for 5 seconds)
         if persistent_client_manager.last_balance_fetch:
             cache_age = (datetime.now() - persistent_client_manager.last_balance_fetch).total_seconds()
             if cache_age < 5:
-                print(f"💾 Using cached balance (age: {cache_age:.1f}s)")
+                print(f"CACHE: Using cached balance (age: {cache_age:.1f}s)")
                 return jsonify({
                     'demo_balance': persistent_client_manager.balance_cache['demo'],
                     'real_balance': persistent_client_manager.balance_cache['real'],
                     'currency': persistent_client_manager.balance_cache['currency'],
                     'timestamp': datetime.now().isoformat(),
-                    'cached': True
+                    'cached': True,
+                    'mode': 'real'
                 })
         
-        print("🔄 Fetching balance from PocketOption...")
+        print("SYNC: Fetching balance from PocketOption...")
         
         async def fetch_both_balances():
             results = {'demo': 0, 'real': 0, 'currency': 'USD', 'errors': []}
             
             # Fetch Demo Balance using persistent client
             try:
-                print("📊 Getting demo balance...")
+                print("DEMO: Getting demo balance...")
                 demo_ssid = persistent_client_manager.get_ssid_for_mode(is_demo=True)
                 demo_client = await persistent_client_manager.get_demo_client(demo_ssid)
                 demo_balance = await asyncio.wait_for(demo_client.get_balance(), timeout=10.0)
                 results['demo'] = demo_balance.balance
                 results['currency'] = demo_balance.currency
-                print(f"✅ Demo Balance: ${demo_balance.balance:.2f}")
+                print(f"SUCCESS: Demo Balance: ${demo_balance.balance:.2f}")
             except asyncio.TimeoutError:
                 error_msg = "Demo balance fetch timeout - SSID_DEMO may be expired"
-                print(f"⏱️ {error_msg}")
+                print(f"TIMEOUT: {error_msg}")
                 results['errors'].append(error_msg)
                 persistent_client_manager.demo_connected = False
             except Exception as e:
                 error_msg = f"Error fetching demo balance: {str(e)}"
-                print(f"❌ {error_msg}")
+                print(f"ERROR: {error_msg}")
                 results['errors'].append(error_msg)
                 persistent_client_manager.demo_connected = False
             
             # Fetch Real Balance using persistent client
             try:
-                print("💰 Getting real balance...")
+                print("REAL: Getting real balance...")
                 real_ssid = persistent_client_manager.get_ssid_for_mode(is_demo=False)
                 real_client = await persistent_client_manager.get_real_client(real_ssid)
                 real_balance = await asyncio.wait_for(real_client.get_balance(), timeout=10.0)
                 results['real'] = real_balance.balance
-                print(f"✅ Real Balance: ${real_balance.balance:.2f}")
+                print(f"SUCCESS: Real Balance: ${real_balance.balance:.2f}")
             except asyncio.TimeoutError:
                 error_msg = "Real balance fetch timeout - SSID_REAL may be expired"
-                print(f"⏱️ {error_msg}")
+                print(f"TIMEOUT: {error_msg}")
                 results['errors'].append(error_msg)
                 persistent_client_manager.real_connected = False
             except Exception as e:
                 error_msg = f"Error fetching real balance: {str(e)}"
-                print(f"❌ {error_msg}")
+                print(f"ERROR: {error_msg}")
                 results['errors'].append(error_msg)
                 persistent_client_manager.real_connected = False
             
@@ -1381,7 +1471,8 @@ def get_balance():
                 'real_balance': persistent_client_manager.balance_cache.get('real', 0),
                 'currency': 'USD',
                 'error': f'Balance fetch timeout. {error_message}. Please update your SSID in Configuration.',
-                'cached': True
+                'cached': True,
+                'mode': 'real'
             }), 200  # Return 200 but with error message
         
         # Update cache
@@ -1395,13 +1486,14 @@ def get_balance():
             client_balance['demo'] = result['demo']
             client_balance['real'] = result['real']
         
-        print(f"💾 Balance cached - Demo: ${result['demo']:.2f}, Real: ${result['real']:.2f}")
+        print(f"CACHE: Balance cached - Demo: ${result['demo']:.2f}, Real: ${result['real']:.2f}")
         
         response_data = {
             'demo_balance': result['demo'],
             'real_balance': result['real'],
             'currency': result['currency'],
-            'timestamp': datetime.now().isoformat()
+            'timestamp': datetime.now().isoformat(),
+            'mode': 'real'
         }
         
         # Add warning if there were errors
@@ -1411,7 +1503,7 @@ def get_balance():
         return jsonify(response_data)
     
     except Exception as e:
-        print(f"❌ Balance fetch error: {e}")
+        print(f"ERROR: Balance fetch error: {e}")
         import traceback
         traceback.print_exc()
         return jsonify({
@@ -1419,8 +1511,183 @@ def get_balance():
             'real_balance': client_balance.get('real', 0),
             'currency': 'USD',
             'error': str(e),
-            'cached': True
+            'cached': True,
+            'mode': data_mode
         }), 500
+
+def generate_dummy_balance():
+    """Generate dummy balance data for testing"""
+    import random
+    return {
+        'demo_balance': round(random.uniform(1000, 5000), 2),
+        'real_balance': round(random.uniform(500, 2000), 2),
+        'currency': 'USD',
+        'timestamp': datetime.now().isoformat(),
+        'dummy': True
+    }
+
+def generate_dummy_trade_results():
+    """Generate dummy trade results for testing"""
+    import random
+    from datetime import datetime, timedelta
+    
+    results = []
+    assets = ['EUR/USD', 'GBP/USD', 'USD/JPY', 'AUD/USD', 'USD/CAD']
+    directions = ['call', 'put']
+    outcomes = ['win', 'loss', 'draw']
+    
+    for i in range(10):  # Generate 10 dummy trades
+        trade_time = datetime.now() - timedelta(minutes=random.randint(1, 120))
+        result = random.choice(outcomes)
+        amount = round(random.uniform(1, 50), 2)
+        
+        trade = {
+            'time': trade_time.strftime('%H:%M:%S'),
+            'asset': random.choice(assets),
+            'direction': random.choice(directions),
+            'amount': amount,
+            'step': random.randint(0, 3),
+            'duration': random.choice([1, 5, 15]),
+            'result': result,
+            'order_id': f"dummy_{random.randint(10000, 99999)}",
+            'profit': round(amount * 0.8, 2) if result == 'win' else (-amount if result == 'loss' else 0),
+            'dummy': True
+        }
+        results.append(trade)
+    
+    return results
+
+def generate_dummy_analysis():
+    """Generate dummy trade analysis data"""
+    import random
+    
+    wins = random.randint(3, 8)
+    losses = random.randint(2, 6)
+    draws = random.randint(0, 2)
+    total = wins + losses + draws
+    win_rate = (wins / (wins + losses) * 100) if (wins + losses) > 0 else 0
+    
+    return {
+        'total_trades': total,
+        'completed_trades': total,
+        'wins': wins,
+        'losses': losses,
+        'draws': draws,
+        'pending': 0,
+        'failed': 0,
+        'win_rate': round(win_rate, 2),
+        'total_profit': round(random.uniform(-50, 100), 2),
+        'current_step': random.randint(0, 3),
+        'current_trade_amount': round(random.uniform(1, 50) * (2.5 ** random.randint(0, 3)), 2),
+        'dummy': True
+    }
+
+def log_mode_change(mode, source='api'):
+    """Log mode changes to Railway logs and storage"""
+    try:
+        log_entry = {
+            'timestamp': datetime.now().isoformat(),
+            'mode': mode,
+            'source': source,
+            'hostname': os.getenv('RAILWAY_ENVIRONMENT', 'local'),
+            'user_agent': request.headers.get('User-Agent', 'unknown') if 'request' in globals() else 'system'
+        }
+        
+        # Log to console (Railway logs)
+        print(f"MODE_CHANGE: {log_entry}")
+        
+        # Save to mode history file
+        mode_history_file = 'mode_history.json'
+        history = []
+        
+        if os.path.exists(mode_history_file):
+            try:
+                with open(mode_history_file, 'r') as f:
+                    history = json.load(f)
+            except:
+                history = []
+        
+        history.append(log_entry)
+        
+        # Keep only last 50 entries
+        if len(history) > 50:
+            history = history[-50:]
+        
+        with open(mode_history_file, 'w') as f:
+            json.dump(history, f, indent=2)
+        
+        logger.info(f"Data mode changed to: {mode} (source: {source})")
+        
+    except Exception as e:
+        logger.error(f"Failed to log mode change: {e}")
+
+@app.route('/api/mode', methods=['GET'])
+def get_data_mode():
+    """Get current data mode (real/dummy)"""
+    global data_mode
+    return jsonify({
+        'current_mode': data_mode,
+        'available_modes': ['real', 'dummy'],
+        'timestamp': datetime.now().isoformat()
+    })
+
+@app.route('/api/mode', methods=['POST'])
+def set_data_mode():
+    """Set data mode (real/dummy)"""
+    global data_mode, dummy_data_cache
+    
+    try:
+        data = request.get_json()
+        new_mode = data.get('mode')
+        
+        if new_mode not in ['real', 'dummy']:
+            return jsonify({'error': 'Invalid mode. Use "real" or "dummy"'}), 400
+        
+        old_mode = data_mode
+        data_mode = new_mode
+        
+        # Clear dummy cache when switching to real mode
+        if new_mode == 'real':
+            dummy_data_cache.clear()
+        
+        # Log the mode change
+        log_mode_change(new_mode, 'api')
+        
+        # Pre-generate dummy data if switching to dummy mode
+        if new_mode == 'dummy':
+            dummy_data_cache['balance'] = generate_dummy_balance()
+            dummy_data_cache['trades'] = generate_dummy_trade_results()
+            dummy_data_cache['analysis'] = generate_dummy_analysis()
+        
+        return jsonify({
+            'success': True,
+            'message': f'Data mode changed from {old_mode} to {new_mode}',
+            'current_mode': data_mode,
+            'timestamp': datetime.now().isoformat()
+        })
+        
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/mode/history', methods=['GET'])
+def get_mode_history():
+    """Get mode change history"""
+    try:
+        mode_history_file = 'mode_history.json'
+        
+        if os.path.exists(mode_history_file):
+            with open(mode_history_file, 'r') as f:
+                history = json.load(f)
+        else:
+            history = []
+        
+        return jsonify({
+            'history': history,
+            'total': len(history)
+        })
+        
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
 
 def run_trading_bot():
     """Run trading bot continuously - no parameters needed, reads from .env"""
@@ -1455,8 +1722,8 @@ def run_trading_bot():
         
         # Check for database lock error
         if 'database is locked' in error_msg or 'database' in error_msg:
-            print(f"\n❌ Database lock error detected: {e}")
-            print("🔄 Automatically cleaning up session files...")
+            print(f"\nERROR: Database lock error detected: {e}")
+            print("CLEANUP: Automatically cleaning up session files...")
             
             # Delete session files
             session_files = [
@@ -1472,13 +1739,13 @@ def run_trading_bot():
                         deleted_count += 1
                         print(f"✓ Deleted {session_file}")
                     except Exception as del_error:
-                        print(f"⚠️ Could not delete {session_file}: {del_error}")
+                        print(f"WARNING: Could not delete {session_file}: {del_error}")
             
             if deleted_count > 0:
-                print(f"\n✅ Cleaned up {deleted_count} session file(s)")
-                print("💡 Session files deleted. Please restart server and verify OTP again.")
+                print(f"\nSUCCESS: Cleaned up {deleted_count} session file(s)")
+                print("INFO: Session files deleted. Please restart server and verify OTP again.")
             else:
-                print("\n⚠️ No session files found to delete")
+                print("\nWARNING: No session files found to delete")
         else:
             print(f"Trading bot error: {e}")
             import traceback
@@ -1543,7 +1810,7 @@ if __name__ == '__main__':
         # Always start bot
         try:
             print("\n" + "=" * 60)
-            print("🤖 AUTO-STARTING TRADING BOT")
+            print("BOT: AUTO-STARTING TRADING BOT")
             print("=" * 60)
             
             # Get config from environment
@@ -1552,7 +1819,7 @@ if __name__ == '__main__':
             multiplier = get_multiplier()
             martingale_step = int(os.getenv('MARTINGALE_STEP', '0'))
             
-            print(f"📊 Configuration:")
+            print(f"CONFIG: Configuration:")
             print(f"   Amount: ${trade_amount} (from .env)")
             print(f"   Mode: {'DEMO' if is_demo else 'REAL'}")
             print(f"   Multiplier: {multiplier}x")
@@ -1565,13 +1832,13 @@ if __name__ == '__main__':
                 daemon=True
             )
             trading_thread.start()
-            print("✅ Trading bot started automatically!")
-            print("🎯 Bot is now monitoring Telegram signals")
+            print("SUCCESS: Trading bot started automatically!")
+            print("MONITOR: Bot is now monitoring Telegram signals")
             print("=" * 60 + "\n")
                 
         except Exception as e:
-            print(f"❌ Auto-start failed: {e}")
-            print("💡 Check your configuration in .env file")
+            print(f"ERROR: Auto-start failed: {e}")
+            print("INFO: Check your configuration in .env file")
             print("=" * 60 + "\n")
     
     # Start auto-start in background thread

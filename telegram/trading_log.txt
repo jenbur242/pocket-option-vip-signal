@@ -589,3 +589,526 @@ Step 7: $   3051.76
    3. Copy TELEGRAM_STRING_SESSION to Railway environment
    4. Redeploy to Railway
 💡 The bot needs a string session for Railway deployment
+
+============================================================
+
+============================================================
+
+============================================================
+
+============================================================
+🤖 POCKET OPTION TRADING BOT
+============================================================
+Channels: 1 channels
+  - Pocket Option Signals VIP (ID: None)
+Account: DEMO
+TRADE_AMOUNT (raw): 5.0
+Initial Amount: $5.0
+Multiplier: 2.5x
+============================================================
+
+============================================================
+📊 MARTINGALE AMOUNT TABLE (8 Steps)
+============================================================
+Step 0: $      5.00
+Step 1: $     12.50
+Step 2: $     31.25
+Step 3: $     78.12
+Step 4: $    195.31
+Step 5: $    488.28
+Step 6: $   1220.70
+Step 7: $   3051.76
+============================================================
+
+🔌 Connecting to PocketOption...
+💰 Balance: $49155.75 USD
+✅ Connected to PocketOption!
+❌ No string session found - Railway deployment incomplete
+🔑 To fix this issue:
+   1. Run locally: python railway_session_manager.py
+   2. Complete OTP: python railway_otp_handler.py <OTP_CODE>
+   3. Copy TELEGRAM_STRING_SESSION to Railway environment
+   4. Redeploy to Railway
+💡 The bot needs a string session for Railway deployment
+
+============================================================
+🤖 POCKET OPTION TRADING BOT
+============================================================
+Channels: 1 channels
+  - Pocket Option Signals VIP (ID: None)
+Account: DEMO
+TRADE_AMOUNT (raw): 5.0
+Initial Amount: $5.0
+Multiplier: 2.5x
+============================================================
+
+============================================================
+📊 MARTINGALE AMOUNT TABLE (8 Steps)
+============================================================
+Step 0: $      5.00
+Step 1: $     12.50
+Step 2: $     31.25
+Step 3: $     78.12
+Step 4: $    195.31
+Step 5: $    488.28
+Step 6: $   1220.70
+Step 7: $   3051.76
+============================================================
+
+🔌 Connecting to PocketOption...
+💰 Balance: $49155.75 USD
+✅ Connected to PocketOption!
+❌ No string session found - Railway deployment incomplete
+🔑 To fix this issue:
+   1. Run locally: python railway_session_manager.py
+   2. Complete OTP: python railway_otp_handler.py <OTP_CODE>
+   3. Copy TELEGRAM_STRING_SESSION to Railway environment
+   4. Redeploy to Railway
+💡 The bot needs a string session for Railway deployment
+
+============================================================
+
+============================================================
+
+============================================================
+
+============================================================
+
+============================================================
+
+============================================================
+
+============================================================
+
+============================================================
+
+============================================================
+POCKET OPTION TRADING BOT
+============================================================
+Channels: 1 channels
+  - Pocket Option Signals VIP (ID: None)
+Account: DEMO
+TRADE_AMOUNT (raw): 5.0
+Initial Amount: $5.0
+Multiplier: 2.5x
+============================================================
+
+============================================================
+MARTINGALE AMOUNT TABLE (8 Steps)
+============================================================
+Step 0: $      5.00
+Step 1: $     12.50
+Step 2: $     31.25
+Step 3: $     78.12
+Step 4: $    195.31
+Step 5: $    488.28
+Step 6: $   1220.70
+Step 7: $   3051.76
+============================================================
+
+Connecting to PocketOption...
+
+============================================================
+POCKET OPTION TRADING BOT
+============================================================
+Channels: 1 channels
+  - Pocket Option Signals VIP (ID: None)
+Account: DEMO
+TRADE_AMOUNT (raw): 5.0
+Initial Amount: $5.0
+Multiplier: 2.5x
+============================================================
+
+============================================================
+MARTINGALE AMOUNT TABLE (8 Steps)
+============================================================
+Step 0: $      5.00
+Step 1: $     12.50
+Step 2: $     31.25
+Step 3: $     78.12
+Step 4: $    195.31
+Step 5: $    488.28
+Step 6: $   1220.70
+Step 7: $   3051.76
+============================================================
+
+Connecting to PocketOption...
+
+============================================================
+POCKET OPTION TRADING BOT
+============================================================
+Channels: 1 channels
+  - Pocket Option Signals VIP (ID: None)
+Account: DEMO
+TRADE_AMOUNT (raw): 5.0
+Initial Amount: $5.0
+Multiplier: 2.5x
+============================================================
+
+============================================================
+MARTINGALE AMOUNT TABLE (8 Steps)
+============================================================
+Step 0: $      5.00
+Step 1: $     12.50
+Step 2: $     31.25
+Step 3: $     78.12
+Step 4: $    195.31
+Step 5: $    488.28
+Step 6: $   1220.70
+Step 7: $   3051.76
+
+============================================================
+POCKET OPTION TRADING BOT
+============================================================
+Channels: 1 channels
+  - Pocket Option Signals VIP (ID: None)
+Account: DEMO
+TRADE_AMOUNT (raw): 5.0
+Initial Amount: $5.0
+Multiplier: 2.5x
+============================================================
+
+============================================================
+MARTINGALE AMOUNT TABLE (8 Steps)
+============================================================
+Step 0: $      5.00
+Step 1: $     12.50
+Step 2: $     31.25
+Step 3: $     78.12
+Step 4: $    195.31
+Step 5: $    488.28
+Step 6: $   1220.70
+Step 7: $   3051.76
+============================================================
+
+Connecting to PocketOption...
+
+============================================================
+POCKET OPTION TRADING BOT
+============================================================
+Channels: 1 channels
+  - Pocket Option Signals VIP (ID: None)
+Account: DEMO
+TRADE_AMOUNT (raw): 5.0
+Initial Amount: $5.0
+Multiplier: 2.5x
+============================================================
+
+============================================================
+MARTINGALE AMOUNT TABLE (8 Steps)
+============================================================
+Step 0: $      5.00
+Step 1: $     12.50
+Step 2: $     31.25
+Step 3: $     78.12
+Step 4: $    195.31
+Step 5: $    488.28
+Step 6: $   1220.70
+
+============================================================
+Step 7: $   3051.76
+POCKET OPTION TRADING BOT
+============================================================
+
+============================================================
+Channels: 1 channels
+Connecting to PocketOption...
+  - Pocket Option Signals VIP (ID: None)
+Account: DEMO
+TRADE_AMOUNT (raw): 5.0
+Initial Amount: $5.0
+Multiplier: 2.5x
+============================================================
+
+============================================================
+MARTINGALE AMOUNT TABLE (8 Steps)
+============================================================
+Step 0: $      5.00
+Step 1: $     12.50
+Step 2: $     31.25
+Step 3: $     78.12
+Step 4: $    195.31
+Step 5: $    488.28
+Step 6: $   1220.70
+Step 7: $   3051.76
+============================================================
+
+Connecting to PocketOption...
+Balance: $49155.75 USD
+Connected to PocketOption!
+No string session found
+Please enter your Telegram string session in the frontend
+Balance: $49155.75 USD
+Connected to PocketOption!
+No string session found
+Please enter your Telegram string session in the frontend
+
+============================================================
+POCKET OPTION TRADING BOT
+============================================================
+Channels: 1 channels
+  - Pocket Option Signals VIP (ID: None)
+Account: DEMO
+TRADE_AMOUNT (raw): 5.0
+Initial Amount: $5.0
+Multiplier: 2.5x
+============================================================
+
+============================================================
+MARTINGALE AMOUNT TABLE (8 Steps)
+============================================================
+Step 0: $      5.00
+Step 1: $     12.50
+Step 2: $     31.25
+Step 3: $     78.12
+Step 4: $    195.31
+Step 5: $    488.28
+Step 6: $   1220.70
+Step 7: $   3051.76
+============================================================
+
+Connecting to PocketOption...
+Balance: $49155.75 USD
+Connected to PocketOption!
+No string session found
+Please enter your Telegram string session in the frontend
+
+============================================================
+POCKET OPTION TRADING BOT
+============================================================
+Channels: 1 channels
+  - Pocket Option Signals VIP (ID: None)
+Account: DEMO
+TRADE_AMOUNT (raw): 5.0
+Initial Amount: $5.0
+Multiplier: 2.5x
+============================================================
+
+============================================================
+MARTINGALE AMOUNT TABLE (8 Steps)
+============================================================
+Step 0: $      5.00
+Step 1: $     12.50
+Step 2: $     31.25
+Step 3: $     78.12
+Step 4: $    195.31
+Step 5: $    488.28
+Step 6: $   1220.70
+Step 7: $   3051.76
+============================================================
+
+Connecting to PocketOption...
+Balance: $49155.75 USD
+Connected to PocketOption!
+No string session found
+Please enter your Telegram string session in the frontend
+
+============================================================
+POCKET OPTION TRADING BOT
+============================================================
+Channels: 1 channels
+  - Pocket Option Signals VIP (ID: None)
+Account: DEMO
+TRADE_AMOUNT (raw): 5.0
+Initial Amount: $5.0
+Multiplier: 2.5x
+============================================================
+
+============================================================
+MARTINGALE AMOUNT TABLE (8 Steps)
+============================================================
+Step 0: $      5.00
+Step 1: $     12.50
+Step 2: $     31.25
+Step 3: $     78.12
+Step 4: $    195.31
+Step 5: $    488.28
+Step 6: $   1220.70
+Step 7: $   3051.76
+============================================================
+
+Connecting to PocketOption...
+Balance: $49155.75 USD
+Connected to PocketOption!
+No string session found
+Please enter your Telegram string session in the frontend
+
+============================================================
+POCKET OPTION TRADING BOT
+============================================================
+Channels: 1 channels
+  - Pocket Option Signals VIP (ID: None)
+Account: DEMO
+TRADE_AMOUNT (raw): 5.0
+Initial Amount: $5.0
+Multiplier: 2.5x
+============================================================
+
+============================================================
+MARTINGALE AMOUNT TABLE (8 Steps)
+============================================================
+Step 0: $      5.00
+Step 1: $     12.50
+Step 2: $     31.25
+Step 3: $     78.12
+Step 4: $    195.31
+Step 5: $    488.28
+Step 6: $   1220.70
+Step 7: $   3051.76
+============================================================
+
+Connecting to PocketOption...
+Balance: $49155.75 USD
+Connected to PocketOption!
+No string session found
+Please enter your Telegram string session in the frontend
+
+============================================================
+POCKET OPTION TRADING BOT
+============================================================
+Channels: 1 channels
+  - Pocket Option Signals VIP (ID: None)
+Account: DEMO
+TRADE_AMOUNT (raw): 5.0
+Initial Amount: $5.0
+Multiplier: 2.5x
+============================================================
+
+============================================================
+MARTINGALE AMOUNT TABLE (8 Steps)
+============================================================
+Step 0: $      5.00
+Step 1: $     12.50
+Step 2: $     31.25
+Step 3: $     78.12
+Step 4: $    195.31
+Step 5: $    488.28
+Step 6: $   1220.70
+Step 7: $   3051.76
+============================================================
+
+Connecting to PocketOption...
+Balance: $49155.75 USD
+Connected to PocketOption!
+No string session found
+Please enter your Telegram string session in the frontend
+
+============================================================
+POCKET OPTION TRADING BOT
+============================================================
+Channels: 1 channels
+  - Pocket Option Signals VIP (ID: None)
+Account: DEMO
+TRADE_AMOUNT (raw): 5.0
+Initial Amount: $5.0
+Multiplier: 2.5x
+============================================================
+
+============================================================
+MARTINGALE AMOUNT TABLE (8 Steps)
+============================================================
+Step 0: $      5.00
+Step 1: $     12.50
+Step 2: $     31.25
+Step 3: $     78.12
+Step 4: $    195.31
+Step 5: $    488.28
+Step 6: $   1220.70
+
+============================================================
+Step 7: $   3051.76
+POCKET OPTION TRADING BOT
+=================================
+
+Connecting to PocketOption...
+============================================================
+Channels: 1 channels
+  - Pocket Option Signals VIP (ID: None)
+Account: DEMO
+TRADE_AMOUNT (raw): 5.0
+Initial Amount: $5.0
+Multiplier: 2.5x
+============================================================
+
+============================================================
+MARTINGALE AMOUNT TABLE (8 Steps)
+============================================================
+Step 0: $      5.00
+Step 1: $     12.50
+Step 2: $     31.25
+Step 3: $     78.12
+Step 4: $    195.31
+Step 5: $    488.28
+Step 6: $   1220.70
+Step 7: $   3051.76
+============================================================
+
+Connecting to PocketOption...
+
+============================================================
+POCKET OPTION TRADING BOT
+============================================================
+Channels: 1 channels
+  - Pocket Option Signals VIP (ID: None)
+Account: DEMO
+TRADE_AMOUNT (raw): 5.0
+Initial Amount: $5.0
+Multiplier: 2.5x
+============================================================
+
+============================================================
+MARTINGALE AMOUNT TABLE (8 Steps)
+============================================================
+Step 0: $      5.00
+Step 1: $     12.50
+Step 2: $     31.25
+Step 3: $     78.12
+Step 4: $    195.31
+Step 5: $    488.28
+Step 6: $   1220.70
+Step 7: $   3051.76
+============================================================
+
+Connecting to PocketOption...
+
+============================================================
+POCKET OPTION TRADING BOT
+============================================================
+Channels: 1 channels
+  - Pocket Option Signals VIP (ID: None)
+Account: DEMO
+TRADE_AMOUNT (raw): 5.0
+Initial Amount: $5.0
+Multiplier: 2.5x
+============================================================
+
+============================================================
+MARTINGALE AMOUNT TABLE (8 Steps)
+============================================================
+Step 0: $      5.00
+Step 1: $     12.50
+Step 2: $     31.25
+Step 3: $     78.12
+Step 4: $    195.31
+Step 5: $    488.28
+Step 6: $   1220.70
+Step 7: $   3051.76
+============================================================
+
+Connecting to PocketOption...
+Balance: $49155.75 USD
+Connected to PocketOption!
+No string session found
+Please enter your Telegram string session in the frontend
+Balance: $49155.75 USD
+Connected to PocketOption!
+No string session found
+Please enter your Telegram string session in the frontend
+Bot is already running (PIDs: [5940])
+Please stop other instances first
+Bot is already running (PIDs: [10012])
+Please stop other instances first
+Bot is already running (PIDs: [2740])
+Please stop other instances first
+Bot is already running (PIDs: [13180])
+Please stop other instances first
