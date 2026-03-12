@@ -677,10 +677,21 @@ def send_telegram_code():
 def get_sessions_status():
     """Get session status and cleanup information"""
     try:
+        from session_cleanup import get_session_stats, get_all_sessions
+        
+        # Get basic session status
         status = get_session_status()
+        
+        # Get detailed session stats
+        stats = get_session_stats()
+        all_sessions = get_all_sessions()
+        
         return jsonify({
             'success': True,
-            'session_status': status
+            'session_status': status,
+            'stats': stats,
+            'active_sessions': all_sessions,
+            'timestamp': datetime.now().isoformat()
         })
     except Exception as e:
         return jsonify({'error': str(e)}), 500
@@ -1727,29 +1738,6 @@ def clear_sessions():
             'success': False,
             'error': str(e),
             'message': 'Failed to clear sessions'
-        }), 500
-
-@app.route('/api/sessions/status', methods=['GET'])
-def get_sessions_status():
-    """Get current session status"""
-    try:
-        from session_cleanup import get_session_stats, get_all_sessions
-        
-        stats = get_session_stats()
-        all_sessions = get_all_sessions()
-        
-        return jsonify({
-            'success': True,
-            'stats': stats,
-            'active_sessions': all_sessions,
-            'timestamp': datetime.now().isoformat()
-        })
-    
-    except Exception as e:
-        return jsonify({
-            'success': False,
-            'error': str(e),
-            'message': 'Failed to get session status'
         }), 500
 
 def run_trading_bot():
