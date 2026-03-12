@@ -624,9 +624,9 @@ async def main():
         log_message(f"❌ Failed to connect to PocketOption: {e}")
         return
     
-    # Connect to Telegram - ONLY STRING SESSIONS (no session files)
+    # Connect to Telegram - RAILWAY READY (string sessions only)
     if STRING_SESSION:
-        log_message("🔐 Using string session")
+        log_message("🔐 Using string session (Railway ready)")
         client = TelegramClient(StringSession(STRING_SESSION), API_ID, API_HASH)
         
         try:
@@ -635,18 +635,28 @@ async def main():
             
             # Check if already authorized
             if not await client.is_user_authorized():
-                log_message("❌ String session not authorized - please check your TELEGRAM_STRING_SESSION in .env")
+                log_message("❌ String session invalid - please recreate session")
+                log_message("💡 Run: python railway_session_manager.py")
+                log_message("💡 Then: python railway_otp_handler.py <OTP_CODE>")
+                log_message("💡 Redeploy to Railway with updated .env")
                 await client.disconnect()
                 return
             
-            log_message("✅ Telegram session authorized successfully")
+            log_message("✅ Telegram string session authorized successfully")
+            log_message("🚀 Railway deployment ready - 24/7 operation enabled")
             
         except Exception as e:
             log_message(f"❌ Telegram connection error with string session: {e}")
+            log_message("💡 Check TELEGRAM_STRING_SESSION in Railway environment variables")
             return
     else:
-        log_message("❌ No string session found - please create a session via web interface first")
-        log_message("� Set TELEGRAM_STRING_SESSION in .env or use the web interface to create a session")
+        log_message("❌ No string session found - Railway deployment incomplete")
+        log_message("🔑 To fix this issue:")
+        log_message("   1. Run locally: python railway_session_manager.py")
+        log_message("   2. Complete OTP: python railway_otp_handler.py <OTP_CODE>")
+        log_message("   3. Copy TELEGRAM_STRING_SESSION to Railway environment")
+        log_message("   4. Redeploy to Railway")
+        log_message("💡 The bot needs a string session for Railway deployment")
         return
     
     # Connect to ALL channels

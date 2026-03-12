@@ -6,9 +6,10 @@ Provides endpoints for frontend to manage SSID, start trading, and view results
 from flask import Flask, request, jsonify, send_file
 from flask_cors import CORS
 import os
+import json
 import asyncio
 import threading
-from datetime import datetime
+from datetime import datetime, timedelta
 from dotenv import load_dotenv, set_key
 from typing import Dict, List
 import sys
@@ -40,6 +41,10 @@ load_dotenv()
 
 app = Flask(__name__)
 CORS(app)  # Enable CORS for frontend
+
+# Configure logging
+import logging
+logger = logging.getLogger(__name__)
 
 # Global state
 trading_active = False
@@ -339,6 +344,214 @@ def set_ssid():
             'real_configured': bool(ssid_real)
         })
     
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/sessions/monitor-status', methods=['GET'])
+def get_session_monitor_status():
+    """Get current session monitoring status"""
+    try:
+        # Check for renewal request
+        renewal_request = None
+        if os.path.exists('session_renewal_request.json'):
+            with open('session_renewal_request.json', 'r') as f:
+                renewal_request = json.load(f)
+        
+        # Check monitor status
+        monitor_status = None
+        if os.path.exists('session_monitor_status.json'):
+            with open('session_monitor_status.json', 'r') as f:
+                monitor_status = json.load(f)
+        
+        return jsonify({
+            'success': True,
+            'renewal_request': renewal_request,
+            'monitor_status': monitor_status,
+            'timestamp': datetime.now().isoformat()
+        })
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/sessions/renew', methods=['POST'])
+def request_session_renewal():
+    """Request session renewal via OTP"""
+    try:
+        data = request.get_json()
+        action = data.get('action')
+        
+        if action == 'start_renewal':
+            # Check if renewal is already requested
+            if os.path.exists('session_renewal_request.json'):
+                with open('session_renewal_request.json', 'r') as f:
+                    existing_request = json.load(f)
+                
+                # Check if request is recent (within 5 minutes)
+                requested_at = datetime.fromisoformat(existing_request['requested_at'])
+                if datetime.now() - requested_at < timedelta(minutes=5):
+                    return jsonify({
+                        'success': False,
+                        'message': 'Renewal already requested. Please wait for OTP.'
+                    })
+            
+            # Create new renewal request
+            renewal_request = {
+                'requested_at': datetime.now().isoformat(),
+                'action': 'send_otp',
+                'session_status': 'expired',
+                'requires_otp': True,
+                'phone': os.getenv('TELEGRAM_PHONE'),
+                'api_id': os.getenv('TELEGRAM_API_ID')
+            }
+            
+            with open('session_renewal_request.json', 'w') as f:
+                json.dump(renewal_request, f, indent=2)
+            
+            return jsonify({
+                'success': True,
+                'message': 'Session renewal requested. OTP will be sent to your phone.',
+                'renewal_request': renewal_request
+            })
+        
+        elif action == 'complete_renewal':
+            # Complete renewal with OTP
+            otp_code = data.get('otp_code')
+            if not otp_code:
+                return jsonify({'error': 'OTP code is required'}), 400
+            
+            # Process OTP verification
+            from telegram.main import API_ID, API_HASH, PHONE_NUMBER
+            from telethon.sync import TelegramClient
+            from telethon.sessions import StringSession
+            
+            try:
+                # Create temporary session for OTP verification
+                client = TelegramClient('renewal_session', API_ID, API_HASH)
+                await client.connect()
+                await client.sign_in(PHONE_NUMBER, otp_code)
+                
+                # Convert to string session
+                string_session = StringSession.save(client.session)
+                
+                # Save to .env
+                env_path = os.path.join(os.path.dirname(__file__), '.env')
+                set_key(env_path, 'TELEGRAM_STRING_SESSION', string_session)
+                load_dotenv(override=True)
+                
+                # Clean up
+                await client.disconnect()
+                
+                # Remove renewal request
+                if os.path.exists('session_renewal_request.json'):
+                    os.remove('session_renewal_request.json')
+                
+                # Clean up temporary files
+                temp_files = ['renewal_session.session', 'renewal_session.session-journal']
+                for file in temp_files:
+                    if os.path.exists(file):
+                        os.remove(file)
+                
+                return jsonify({
+                    'success': True,
+                    'message': 'Session renewed successfully! Bot will reconnect automatically.',
+                    'string_session_created': True
+                })
+                
+            except Exception as e:
+                return jsonify({'error': f'OTP verification failed: {str(e)}'}), 500
+        
+        else:
+            return jsonify({'error': 'Invalid action'}), 400
+            
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/sessions/complete-auto', methods=['POST'])
+def complete_auto_session():
+    """Complete automatic Railway session"""
+    try:
+        data = request.get_json()
+        otp_code = data.get('otp_code')
+        
+        if not otp_code:
+            return jsonify({'error': 'OTP code required'}), 400
+        
+        # Load auto-session status
+        status = None
+        if os.path.exists('railway_session_status.json'):
+            with open('railway_session_status.json', 'r') as f:
+                status = json.load(f)
+        
+        if not status or not status.get('session_name'):
+            return jsonify({'error': 'No pending auto-session found'}), 400
+        
+        session_name = status.get('session_name')
+        phone = status.get('phone')
+        api_id = status.get('api_id')
+        
+        logger.info(f"🔍 Completing auto-session with OTP: {otp_code}")
+        
+        try:
+            # Complete the session
+            client = TelegramClient(session_name, api_id, api_hash)
+            await client.connect()
+            await client.sign_in(phone, otp_code)
+            
+            # Convert to string session
+            string_session = StringSession.save(client.session)
+            
+            # Save to .env
+            env_path = os.path.join(os.path.dirname(__file__), '.env')
+            set_key(env_path, 'TELEGRAM_STRING_SESSION', string_session)
+            load_dotenv(override=True)
+            
+            # Update status
+            success_status = {
+                'auto_session_requested': True,
+                'completed_at': datetime.now().isoformat(),
+                'status': 'completed',
+                'string_session_length': len(string_session),
+                'hostname': status.get('hostname'),
+                'railway_deploy': True
+            }
+            
+            with open('railway_session_status.json', 'w') as f:
+                json.dump(success_status, f, indent=2)
+            
+            logger.info("✅ Auto-session completed and saved to .env")
+            logger.info("🚀 Railway deployment ready!")
+            
+            await client.disconnect()
+            
+            # Clean up temporary files
+            temp_files = [f"{session_name}.session", f"{session_name}.session-journal"]
+            for file in temp_files:
+                if os.path.exists(file):
+                    os.remove(file)
+            
+            return jsonify({
+                'success': True,
+                'message': 'Auto-session completed! Railway deployment ready.',
+                'string_session_created': True
+            })
+            
+        except Exception as e:
+            logger.error(f"❌ Auto-session completion failed: {e}")
+            return jsonify({'error': f'Failed to complete auto-session: {str(e)}'}), 500
+            
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/sessions/clear-renewal', methods=['POST'])
+def clear_renewal_request():
+    """Clear session renewal request"""
+    try:
+        if os.path.exists('session_renewal_request.json'):
+            os.remove('session_renewal_request.json')
+        
+        return jsonify({
+            'success': True,
+            'message': 'Renewal request cleared'
+        })
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 

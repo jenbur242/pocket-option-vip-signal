@@ -1407,6 +1407,248 @@
             }
         }
 
+        // Session Monitoring and Renewal
+        let sessionMonitorInterval = null;
+        let renewalRequestShown = false;
+
+        async function checkSessionMonitorStatus() {
+            try {
+                const response = await fetch(`${API_BASE}/sessions/monitor-status`);
+                const data = await response.json();
+                
+                if (response.ok) {
+                    const renewalRequest = data.renewal_request;
+                    const monitorStatus = data.monitor_status;
+                    
+                    // Show renewal alert if session expired
+                    if (renewalRequest && renewalRequest.requires_otp && !renewalRequestShown) {
+                        showSessionRenewalAlert(renewalRequest);
+                        renewalRequestShown = true;
+                    }
+                    
+                    // Update status display
+                    if (monitorStatus) {
+                        const sessionData = {
+                            session_exists: monitorStatus.session_status === 'valid',
+                            session_type: 'string',
+                            expires_in_hours: monitorStatus.expires_in_hours || 24
+                        };
+                        
+                        const telegramConfig = {
+                            phone: renewalRequest?.phone || 'Unknown',
+                            api_id: renewalRequest?.api_id || 'Unknown'
+                        };
+                        
+                        updateTelegramStatusDisplay(sessionData, telegramConfig);
+                        
+                        // Show warning if session is expiring soon
+                        if (monitorStatus.expires_in_hours && monitorStatus.expires_in_hours < 6) {
+                            addLog(`⚠️ Session expires in ${monitorStatus.expires_in_hours}h`, 'warning');
+                        }
+                    }
+                }
+            } catch (error) {
+                console.error('Error checking session monitor status:', error);
+            }
+        }
+
+        function showSessionRenewalAlert(renewalRequest) {
+            const alertDiv = document.createElement('div');
+            alertDiv.className = 'fixed top-4 right-4 z-50 max-w-sm w-full bg-red-500 border border-red-200 text-white px-6 py-4 rounded-lg shadow-lg transform transition-all duration-300';
+            alertDiv.innerHTML = `
+                <div class="flex items-start gap-3">
+                    <span class="material-symbols-outlined text-xl">warning</span>
+                    <div class="flex-1">
+                        <p class="font-bold mb-2">🔑 Session Expired - Renewal Required</p>
+                        <p class="text-sm mb-3">Your Telegram session has expired. Click below to receive a new OTP code.</p>
+                        <div class="flex gap-2">
+                            <button onclick="requestSessionRenewal()" class="bg-white text-red-600 hover:bg-red-50 font-bold px-4 py-2 rounded-lg text-sm transition-all">
+                                <span class="material-symbols-outlined text-sm mr-1">send</span>
+                                Send OTP
+                            </button>
+                            <button onclick="dismissRenewalAlert()" class="bg-red-600 hover:bg-red-700 text-white font-bold px-4 py-2 rounded-lg text-sm transition-all">
+                                Dismiss
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            document.body.appendChild(alertDiv);
+            
+            // Auto-dismiss after 30 seconds
+            setTimeout(() => {
+                if (document.body.contains(alertDiv)) {
+                    dismissRenewalAlert();
+                }
+            }, 30000);
+        }
+
+        function dismissRenewalAlert() {
+            const alertDiv = document.querySelector('.fixed.top-4.right-4');
+            if (alertDiv) {
+                alertDiv.remove();
+            }
+        }
+
+        async function requestSessionRenewal() {
+            try {
+                dismissRenewalAlert();
+                
+                const response = await fetch(`${API_BASE}/sessions/renew`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        action: 'start_renewal'
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok && data.success) {
+                    showAlert('OTP sent to your phone! Please check Telegram.', 'success');
+                    addLog('🔑 Session renewal OTP sent', 'info');
+                    
+                    // Show OTP input modal
+                    showRenewalOtpModal();
+                } else {
+                    showAlert(data.error || 'Failed to request renewal', 'error');
+                }
+            } catch (error) {
+                showAlert('Error requesting session renewal', 'error');
+            }
+        }
+
+        function showRenewalOtpModal() {
+            // Create modal overlay
+            const modal = document.createElement('div');
+            modal.className = 'fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50';
+            modal.innerHTML = `
+                <div class="bg-slate-800 border border-slate-600 rounded-xl p-6 max-w-md w-full mx-4">
+                    <div class="flex items-start gap-3 mb-4">
+                        <span class="material-symbols-outlined text-primary text-2xl">mail</span>
+                        <div class="flex-1">
+                            <h3 class="text-lg font-bold text-white mb-1">🔑 Session Renewal</h3>
+                            <p class="text-slate-300 text-sm">Enter the OTP code sent to your Telegram</p>
+                        </div>
+                    </div>
+                    
+                    <div class="space-y-4">
+                        <div>
+                            <label class="text-sm font-bold text-slate-300 block mb-2">
+                                <span class="material-symbols-outlined text-xs mr-1">lock</span>
+                                OTP Code
+                            </label>
+                            <input 
+                                id="renewalOtpCode" 
+                                type="text" 
+                                placeholder="12345" 
+                                maxlength="5" 
+                                class="w-full bg-slate-700 border-2 border-slate-600 rounded-lg text-lg font-bold text-center p-4 focus:ring-2 focus:ring-primary focus:border-primary transition-all tracking-widest"
+                                onkeypress="if(event.key === 'Enter') completeSessionRenewal()"
+                            />
+                            <p class="text-xs text-slate-400 mt-2">Press Enter or click Complete after entering the code</p>
+                        </div>
+                        
+                        <div class="flex gap-2">
+                            <button onclick="completeSessionRenewal()" class="flex-1 bg-primary hover:bg-primary/90 text-white font-bold px-4 py-2 rounded-lg transition-all flex items-center justify-center gap-2">
+                                <span class="material-symbols-outlined">check</span>
+                                Complete Renewal
+                            </button>
+                            <button onclick="closeRenewalOtpModal()" class="bg-slate-600 hover:bg-slate-700 text-white font-bold px-4 py-2 rounded-lg transition-all">
+                                Cancel
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            document.body.appendChild(modal);
+            
+            // Focus on OTP input
+            setTimeout(() => {
+                const otpInput = document.getElementById('renewalOtpCode');
+                if (otpInput) {
+                    otpInput.focus();
+                }
+            }, 100);
+        }
+
+        function closeRenewalOtpModal() {
+            const modal = document.querySelector('.fixed.inset-0');
+            if (modal) {
+                modal.remove();
+            }
+        }
+
+        async function completeSessionRenewal() {
+            const otpCode = document.getElementById('renewalOtpCode').value.trim();
+            
+            if (!otpCode) {
+                showAlert('Please enter the OTP code', 'error');
+                return;
+            }
+            
+            if (otpCode.length !== 5) {
+                showAlert('OTP code must be 5 digits', 'error');
+                return;
+            }
+            
+            try {
+                const response = await fetch(`${API_BASE}/sessions/renew`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        action: 'complete_renewal',
+                        otp_code: otpCode
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok && data.success) {
+                    closeRenewalOtpModal();
+                    showAlert('Session renewed successfully! Bot will reconnect automatically.', 'success');
+                    addLog('✅ Session renewed and saved to .env', 'success');
+                    
+                    // Clear renewal request flag
+                    renewalRequestShown = false;
+                    
+                    // Reload configuration after 2 seconds
+                    setTimeout(() => {
+                        loadConfig();
+                    }, 2000);
+                    
+                } else {
+                    showAlert(data.error || 'Failed to complete renewal', 'error');
+                }
+            } catch (error) {
+                showAlert('Error completing session renewal', 'error');
+            }
+        }
+
+        // Start session monitoring
+        function startSessionMonitoring() {
+            // Check immediately
+            checkSessionMonitorStatus();
+            
+            // Then check every 30 seconds
+            sessionMonitorInterval = setInterval(checkSessionMonitorStatus, 30000);
+            
+            addLog('🔍 Session monitoring started (checking every 30s)', 'info');
+        }
+
+        function stopSessionMonitoring() {
+            if (sessionMonitorInterval) {
+                clearInterval(sessionMonitorInterval);
+                sessionMonitorInterval = null;
+                addLog('🛑 Session monitoring stopped', 'info');
+            }
+
         function updateTelegramStatusDisplay(sessionData, telegramConfig) {
             try {
                 const statusDiv = document.getElementById('telegramActiveStatus');
@@ -2818,6 +3060,9 @@
             
             updateUpcomingCount();
             updateConnectionStatus(); // Check persistent connections
+            
+            // Start session monitoring
+            startSessionMonitoring();
             
             // Auto-start trading after 2 seconds (give time for config to load)
             setTimeout(async () => {
