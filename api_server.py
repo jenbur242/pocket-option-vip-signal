@@ -686,11 +686,10 @@ def verify_telegram_otp():
         if not code:
             return jsonify({'error': 'OTP code is required'}), 400
         
-        api_id = os.getenv('TELEGRAM_API_ID')
-        api_hash = os.getenv('TELEGRAM_API_HASH')
-        phone = os.getenv('TELEGRAM_PHONE')
+        # Use hardcoded credentials from main.py
+        from telegram.main import API_ID, API_HASH, PHONE_NUMBER
         
-        if not all([api_id, api_hash, phone]):
+        if not all([API_ID, API_HASH, PHONE_NUMBER]):
             return jsonify({'error': 'Telegram credentials not configured'}), 400
         
         # Get stored phone_code_hash
@@ -702,12 +701,13 @@ def verify_telegram_otp():
         from telethon.sync import TelegramClient
         
         # Create client and verify code
-        client = TelegramClient('po_vip_testing', api_id, api_hash)
+        client = TelegramClient('po_vip_testing', API_ID, API_HASH)
         
         async def verify_code():
             await client.connect()
             try:
-                await client.sign_in(phone, code, phone_code_hash=temp_phone_code_hash)
+                # Correct sign_in call with proper parameters
+                await client.sign_in(PHONE_NUMBER, code, phone_code_hash=temp_phone_code_hash)
                 await client.disconnect()
                 return True
             except Exception as e:
@@ -731,26 +731,25 @@ def verify_telegram_otp():
             try:
                 # Read the session file and convert to string session
                 from telethon.sync import TelegramClient
-                temp_client = TelegramClient(session_file, api_id, api_hash)
+                temp_client = TelegramClient(session_file, API_ID, API_HASH)
                 temp_client.connect()
                 if temp_client.is_user_authorized():
                     string_session = StringSession.save(temp_client.session)
                     temp_client.disconnect()
                     
-                    # Save string session to .env file
-                    env_path = os.path.join(os.path.dirname(__file__), '.env')
-                    set_key(env_path, 'TELEGRAM_STRING_SESSION', string_session)
-                    load_dotenv(override=True)
+                    # Save string session to global variable in main.py
+                    import telegram.main
+                    telegram.main.STRING_SESSION = string_session
                     
                     # Register session with cleanup system
-                    register_session(session_file, phone)
+                    register_session(session_file, PHONE_NUMBER)
                     
                     # Delete the session file since we now have string session
                     os.remove(session_file)
                     if os.path.exists(session_file + '-journal'):
                         os.remove(session_file + '-journal')
                     
-                    log_message("SUCCESS: String session saved to .env file")
+                    log_message("SUCCESS: String session saved to memory")
                     
                 else:
                     temp_client.disconnect()

@@ -685,31 +685,13 @@ async def create_session_if_needed():
             log_message("📲 Sending OTP code...")
             result = await client.send_code_request(PHONE_NUMBER)
             log_message(f"✅ OTP sent to {PHONE_NUMBER}")
-            log_message("🔢 Please enter OTP code manually:")
-            log_message("   Option 1: Use frontend to enter OTP")
-            log_message("   Option 2: Enter OTP here directly")
+            log_message("🔢 Please use frontend to enter OTP code")
+            log_message("🌐 Open http://localhost:5000 to complete setup")
             
-            # Try to get OTP from console input
-            try:
-                otp_code = input("Enter OTP code (or press Enter to skip): ").strip()
-                if otp_code:
-                    log_message(f"🔓 Verifying OTP: {otp_code}")
-                    await client.sign_in(PHONE_NUMBER, otp_code, result.phone_code_hash)
-                    log_message("✅ OTP verified successfully!")
-                else:
-                    log_message("⏭️ Skipping manual OTP - use frontend")
-                    log_message("🌐 Open http://localhost:5000 to complete setup")
-                    await client.disconnect()
-                    return
-            except KeyboardInterrupt:
-                log_message("⏭️ OTP input cancelled - use frontend")
-                log_message("🌐 Open http://localhost:5000 to complete setup")
-                await client.disconnect()
-                return
-            except Exception as e:
-                log_message(f"❌ OTP verification failed: {e}")
-                await client.disconnect()
-                return
+            # Wait for OTP from frontend - don't use console input
+            log_message("⏳ Waiting for OTP verification from frontend...")
+            await client.disconnect()
+            return
         else:
             log_message("✅ Already authorized - creating string session...")
             
