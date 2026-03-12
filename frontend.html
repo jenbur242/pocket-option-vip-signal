@@ -2106,6 +2106,11 @@
                 addLog('⏳ Fetching from PocketOption (20-35s for quality connection)...', 'info');
                 showAlert('Fetching balance from PocketOption...', 'success');
                 
+                // Clear cache to force fresh fetch
+                localStorage.removeItem(CACHE_KEYS.BALANCE);
+                localStorage.removeItem(CACHE_KEYS.BALANCE_TIMESTAMP);
+                addLog('🗑️ Cache cleared for fresh balance fetch', 'info');
+                
                 const startTime = Date.now();
                 
                 // Show elapsed time in logs
@@ -2133,6 +2138,14 @@
                     const currentBalance = demoBalance > 0 ? demoBalance : realBalance;
                     document.getElementById('currentBalanceDisplay').textContent = '$' + currentBalance.toFixed(2);
                     
+                    // Update account type display
+                    const accountType = document.getElementById('accountType').value === 'true' ? 'DEMO' : 'REAL';
+                    document.getElementById('accountTypeDisplay').textContent = accountType;
+                    
+                    // Cache the fresh balance
+                    setCachedData(CACHE_KEYS.BALANCE, { demo: demoBalance, real: realBalance });
+                    localStorage.setItem(CACHE_KEYS.BALANCE_TIMESTAMP, Date.now().toString());
+                    
                     // Check for errors
                     if (data.error) {
                         addLog(`⚠️ ${data.error}`, 'warning');
@@ -2141,7 +2154,7 @@
                         addLog(`⚠️ ${data.warning}`, 'warning');
                         showAlert(`Balance updated with warnings. Check logs for details.`, 'success');
                     } else {
-                        addLog(`✓ Balance fetched in ${duration}s - Demo: $${demoBalance.toFixed(2)}, Real: $${realBalance.toFixed(2)}`, 'success');
+                        addLog(`✓ Fresh balance fetched in ${duration}s - Demo: $${demoBalance.toFixed(2)}, Real: $${realBalance.toFixed(2)}`, 'success');
                         showAlert(`Balance updated! Demo: $${demoBalance.toFixed(2)}, Real: $${realBalance.toFixed(2)}`, 'success');
                     }
                 } else {
@@ -2488,7 +2501,13 @@
             updateAnalysis();
             updateTrades();
             updateMartingalePreview();
-            updateBalance();
+            
+            // Force fresh balance fetch on page load (ignore cache)
+            addLog('🔄 Fetching fresh balance on page load...', 'info');
+            localStorage.removeItem(CACHE_KEYS.BALANCE);
+            localStorage.removeItem(CACHE_KEYS.BALANCE_TIMESTAMP);
+            updateBalance(); // This will now fetch fresh data
+            
             updateUpcomingCount();
             updateConnectionStatus(); // Check persistent connections
             
