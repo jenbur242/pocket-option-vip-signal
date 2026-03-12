@@ -540,6 +540,48 @@
                                 Telegram Configuration
                             </h4>
                             
+                            <!-- Real-time Telegram Status Display -->
+                            <div class="mb-6 p-4 bg-slate-800/50 border border-border-muted rounded-xl">
+                                <div class="flex items-center justify-between mb-4">
+                                    <p class="font-bold text-info mb-0">📊 Telegram Status</p>
+                                    <div class="flex items-center gap-3">
+                                        <div id="telegramActiveStatus" class="px-2 py-1 rounded-lg bg-slate-600 text-slate-300 text-xs font-bold">
+                                            <div class="flex items-center gap-2">
+                                                <div class="w-2 h-2 bg-slate-400 rounded-full"></div>
+                                                <span>CHECKING...</span>
+                                            </div>
+                                        </div>
+                                        <div id="telegramSessionType" class="px-2 py-1 rounded-lg bg-slate-600 text-slate-300 text-xs font-bold">
+                                            <span>UNKNOWN</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs">
+                                    <div class="bg-slate-700/50 p-3 rounded-lg">
+                                        <p class="text-slate-400 mb-1">Connected Phone</p>
+                                        <p id="telegramConnectedPhone" class="font-mono text-slate-200">Not configured</p>
+                                    </div>
+                                    <div class="bg-slate-700/50 p-3 rounded-lg">
+                                        <p class="text-slate-400 mb-1">Session Type</p>
+                                        <p id="telegramSessionTypeInfo" class="font-mono text-slate-200">No session</p>
+                                    </div>
+                                    <div class="bg-slate-700/50 p-3 rounded-lg">
+                                        <p class="text-slate-400 mb-1">Last Checked</p>
+                                        <p id="telegramLastChecked" class="font-mono text-slate-200">Never</p>
+                                    </div>
+                                </div>
+                                <div class="flex gap-2 mt-4">
+                                    <button onclick="checkTelegramStatusNow()" class="text-xs bg-info/10 hover:bg-info/20 text-info font-bold px-3 py-2 rounded-lg transition-all flex items-center gap-1">
+                                        <span class="material-symbols-outlined text-sm">refresh</span>
+                                        Check Now
+                                    </button>
+                                    <button onclick="clearAllTelegramDataFromStorage()" class="text-xs bg-danger/10 hover:bg-danger/20 text-danger font-bold px-3 py-2 rounded-lg transition-all flex items-center gap-1">
+                                        <span class="material-symbols-outlined text-sm">clear</span>
+                                        Clear Browser Data
+                                    </button>
+                                </div>
+                            </div>
+                            
                             <!-- Session Active Status -->
                             <div id="telegramStatus" class="hidden mb-6 p-4 bg-success/10 border border-success/30 rounded-xl">
                                 <div class="flex items-start gap-3">
@@ -559,6 +601,27 @@
                                             <button onclick="deleteTelegramSession()" class="text-xs bg-danger/10 border border-danger/30 hover:bg-danger/20 text-danger font-bold px-4 py-2 rounded-lg transition-all flex items-center gap-1">
                                                 <span class="material-symbols-outlined text-xs">delete</span>
                                                 Delete Session
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Session Status Display -->
+                            <div id="sessionStatusDisplay" class="hidden mb-6 p-4 bg-slate-800/50 border border-border-muted rounded-xl">
+                                <div class="flex items-start gap-3">
+                                    <span class="material-symbols-outlined text-info">info</span>
+                                    <div class="flex-1">
+                                        <p class="font-bold text-info mb-2">📊 Session Status</p>
+                                        <div id="sessionStatusContent" class="text-xs text-slate-400 space-y-1">
+                                            <!-- Session status will be loaded here -->
+                                        </div>
+                                        <div class="flex gap-2 mt-3">
+                                            <button onclick="loadSessionStatus()" class="text-xs bg-info/10 hover:bg-info/20 text-info font-bold px-3 py-1 rounded-lg transition-all">
+                                                Refresh Status
+                                            </button>
+                                            <button onclick="manualCleanup()" class="text-xs bg-danger/10 hover:bg-danger/20 text-danger font-bold px-3 py-1 rounded-lg transition-all">
+                                                Cleanup Expired
                                             </button>
                                         </div>
                                     </div>
@@ -1247,7 +1310,7 @@
         }
 
         // Configuration Functions
-        // Telegram Session Management with Browser Storage
+        // Enhanced Telegram Session Management with Browser Storage
         function saveTelegramSessionToStorage(sessionData) {
             try {
                 localStorage.setItem('telegramSession', JSON.stringify({
@@ -1293,14 +1356,162 @@
             }
         }
 
+        function saveAllTelegramDataToStorage(telegramData) {
+            try {
+                // Save complete Telegram configuration
+                localStorage.setItem('telegramConfig', JSON.stringify({
+                    ...telegramData,
+                    timestamp: Date.now()
+                }));
+                
+                // Save session status separately
+                localStorage.setItem('telegramStatus', JSON.stringify({
+                    is_active: telegramData.session_exists,
+                    session_type: telegramData.session_type,
+                    last_checked: Date.now(),
+                    phone: telegramData.phone,
+                    api_id: telegramData.api_id,
+                    channel: telegramData.channel
+                }));
+                
+                addLog('💾 Complete Telegram data saved to browser storage', 'success');
+            } catch (error) {
+                console.error('Failed to save Telegram data to storage:', error);
+                addLog('⚠️ Failed to save Telegram data to browser storage', 'warning');
+            }
+        }
+
+        function getAllTelegramDataFromStorage() {
+            try {
+                const config = localStorage.getItem('telegramConfig');
+                const status = localStorage.getItem('telegramStatus');
+                
+                return {
+                    config: config ? JSON.parse(config) : null,
+                    status: status ? JSON.parse(status) : null
+                };
+            } catch (error) {
+                console.error('Failed to get Telegram data from storage:', error);
+                return { config: null, status: null };
+            }
+        }
+
+        function clearAllTelegramDataFromStorage() {
+            try {
+                localStorage.removeItem('telegramConfig');
+                localStorage.removeItem('telegramStatus');
+                localStorage.removeItem('telegramSession');
+                addLog('🗑️ All Telegram data cleared from browser storage', 'info');
+            } catch (error) {
+                console.error('Failed to clear Telegram data from storage:', error);
+            }
+        }
+
+        function updateTelegramStatusDisplay(sessionData, telegramConfig) {
+            try {
+                const statusDiv = document.getElementById('telegramActiveStatus');
+                const sessionTypeDiv = document.getElementById('telegramSessionType');
+                const sessionTypeInfoDiv = document.getElementById('telegramSessionTypeInfo');
+                const lastCheckedDiv = document.getElementById('telegramLastChecked');
+                const phoneDiv = document.getElementById('telegramConnectedPhone');
+                
+                if (statusDiv) {
+                    if (sessionData && sessionData.session_exists) {
+                        statusDiv.innerHTML = `
+                            <div class="flex items-center gap-2">
+                                <div class="w-2 h-2 bg-success rounded-full animate-pulse"></div>
+                                <span class="text-success font-bold">ACTIVE</span>
+                            </div>
+                        `;
+                        statusDiv.className = 'px-2 py-1 rounded-lg bg-success/20 border border-success/50 text-success text-xs font-bold';
+                    } else {
+                        statusDiv.innerHTML = `
+                            <div class="flex items-center gap-2">
+                                <div class="w-2 h-2 bg-danger rounded-full"></div>
+                                <span class="text-danger font-bold">INACTIVE</span>
+                            </div>
+                        `;
+                        statusDiv.className = 'px-2 py-1 rounded-lg bg-danger/20 border border-danger/50 text-danger text-xs font-bold';
+                    }
+                }
+                
+                if (sessionTypeDiv && sessionData) {
+                    const sessionType = sessionData.session_type || 'unknown';
+                    const typeColor = sessionType === 'string' ? 'text-primary' : 'text-warning';
+                    sessionTypeDiv.innerHTML = `<span class="${typeColor} font-bold">${sessionType.toUpperCase()}</span>`;
+                    sessionTypeDiv.className = `px-2 py-1 rounded-lg bg-${sessionType === 'string' ? 'primary' : 'warning'}/20 border border-${sessionType === 'string' ? 'primary' : 'warning'}/50 ${typeColor} text-xs font-bold`;
+                }
+                
+                if (sessionTypeInfoDiv && sessionData) {
+                    const sessionType = sessionData.session_type || 'none';
+                    const typeText = sessionType === 'string' ? 'String Session' : 
+                                   sessionType === 'file' ? 'File Session' : 'No Session';
+                    sessionTypeInfoDiv.innerHTML = `<span class="font-mono">${typeText}</span>`;
+                }
+                
+                if (lastCheckedDiv) {
+                    const now = new Date().toLocaleString();
+                    lastCheckedDiv.innerHTML = `<span class="font-mono">${now}</span>`;
+                }
+                
+                if (phoneDiv && telegramConfig) {
+                    phoneDiv.innerHTML = `<span class="font-mono">${telegramConfig.phone || 'Not configured'}</span>`;
+                }
+                
+            } catch (error) {
+                console.error('Error updating Telegram status display:', error);
+            }
+        }
+
+        async function checkTelegramStatusNow() {
+            try {
+                addLog('🔄 Checking Telegram status...', 'info');
+                
+                const response = await fetch(`${API_BASE}/telegram/check-session`);
+                const sessionData = await response.json();
+                
+                if (response.ok) {
+                    // Get telegram config
+                    const configResponse = await fetch(`${API_BASE}/config`);
+                    const configData = await configResponse.json();
+                    
+                    // Update display
+                    updateTelegramStatusDisplay(sessionData, configData.telegram || {});
+                    
+                    // Save to browser storage
+                    saveAllTelegramDataToStorage({
+                        ...sessionData,
+                        ...(configData.telegram || {})
+                    });
+                    
+                    // Log status
+                    if (sessionData.session_exists) {
+                        addLog(`✅ Telegram session ${sessionData.session_type} is ACTIVE`, 'success');
+                    } else {
+                        addLog('❌ Telegram session is INACTIVE', 'warning');
+                    }
+                    
+                    showAlert(`Telegram status: ${sessionData.session_exists ? 'ACTIVE' : 'INACTIVE'}`, sessionData.session_exists ? 'success' : 'warning');
+                    
+                } else {
+                    addLog('❌ Failed to check Telegram status', 'error');
+                    showAlert('Failed to check Telegram status', 'error');
+                }
+                
+            } catch (error) {
+                addLog('❌ Error checking Telegram status', 'error');
+                showAlert('Error checking Telegram status', 'error');
+            }
+        }
+
         async function loadConfig() {
-            // Hardcoded fallback configuration from .env
+            // No hardcoded fallback - only use .env file
             const FALLBACK_CONFIG = {
-                ssid_demo: '42["auth",{"session":"8kmju1f41cibg1vg5pihe37d7u","isDemo":1,"uid":116040367,"platform":2,"isFastHistory":true,"isOptimized":true}]',
-                ssid_real: '42["auth",{"session":"a:4:{s:10:\\"session_id\\";s:32:\\"2a8f01f1efeca20cc174c1b75eb6156a\\";s:10:\\"ip_address\\";s:14:\\"172.86.107.247\\";s:10:\\"user_agent\\";s:111:\\"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.36\\";s:13:\\"last_activity\\";i:1772807404;}3fed45de8f1ed072a8cabf7a07571f05","isDemo":0,"uid":116040367,"platform":2,"isFastHistory":true,"isOptimized":true}]',
-                telegram_api_id: '28375707',
-                telegram_api_hash: 'cf54e727df04363575f8ee9f120be2c9',
-                telegram_phone: '+12427272924',
+                ssid_demo: null,
+                ssid_real: null,
+                telegram_api_id: null,
+                telegram_api_hash: null,
+                telegram_phone: null,
                 telegram_channel: 'testpob1234'
             };
             
@@ -1310,17 +1521,16 @@
                 
                 let configData = data;
                 
-                // If API fails or returns empty, use hardcoded fallback
+                // If API fails or returns empty, show error (no fallback)
                 if (!response.ok || !data.telegram) {
-                    addLog('⚠️ Using hardcoded configuration from .env', 'warning');
+                    addLog('❌ Failed to load configuration from .env file', 'error');
+                    addLog('📝 Please ensure .env file is properly configured', 'warning');
                     configData = {
-                        ssid_demo_configured: true,
-                        ssid_real_configured: true,
-                        ssid_demo_preview: FALLBACK_CONFIG.ssid_demo.substring(0, 20) + '...' + FALLBACK_CONFIG.ssid_demo.slice(-10),
-                        ssid_real_preview: FALLBACK_CONFIG.ssid_real.substring(0, 20) + '...' + FALLBACK_CONFIG.ssid_real.slice(-10),
+                        ssid_demo_configured: false,
+                        ssid_real_configured: false,
                         telegram: {
                             api_id: FALLBACK_CONFIG.telegram_api_id,
-                            api_hash: '***' + FALLBACK_CONFIG.telegram_api_hash.slice(-4),
+                            api_hash: null,
                             phone: FALLBACK_CONFIG.telegram_phone,
                             channel: FALLBACK_CONFIG.telegram_channel
                         }
@@ -1329,12 +1539,12 @@
                 
                 if (configData) {
                     // Update configuration overview panel
-                    document.getElementById('envSsidDemo').textContent = configData.ssid_demo_preview || FALLBACK_CONFIG.ssid_demo.substring(0, 20) + '...';
-                    document.getElementById('envSsidReal').textContent = configData.ssid_real_preview || FALLBACK_CONFIG.ssid_real.substring(0, 20) + '...';
+                    document.getElementById('envSsidDemo').textContent = configData.ssid_demo_preview || 'Not configured';
+                    document.getElementById('envSsidReal').textContent = configData.ssid_real_preview || 'Not configured';
                     
-                    document.getElementById('envTelegramApiId').textContent = configData.telegram?.api_id || FALLBACK_CONFIG.telegram_api_id;
-                    document.getElementById('envTelegramApiHash').textContent = configData.telegram?.api_hash || ('***' + FALLBACK_CONFIG.telegram_api_hash.slice(-4));
-                    document.getElementById('envTelegramPhone').textContent = configData.telegram?.phone || FALLBACK_CONFIG.telegram_phone;
+                    document.getElementById('envTelegramApiId').textContent = configData.telegram?.api_id || 'Not configured';
+                    document.getElementById('envTelegramApiHash').textContent = configData.telegram?.api_hash ? ('***' + configData.telegram.api_hash.slice(-4)) : 'Not configured';
+                    document.getElementById('envTelegramPhone').textContent = configData.telegram?.phone || 'Not configured';
                     document.getElementById('envTelegramChannel').textContent = configData.telegram?.channel || FALLBACK_CONFIG.telegram_channel;
                     
                     // Load trading config from .env (via API)
@@ -1422,7 +1632,7 @@
                     
                     // Enhanced session logic with browser storage
                     if (sessionData.session_exists) {
-                        // Server session exists - hide all forms, show status
+                        // Session exists - hide all forms, show status
                         document.getElementById('telegramForm').classList.add('hidden');
                         document.getElementById('telegramOtpNeeded').classList.add('hidden');
                         document.getElementById('telegramOtpForm').classList.add('hidden');
@@ -1441,9 +1651,23 @@
                             channel: configData.telegram?.channel || FALLBACK_CONFIG.telegram_channel
                         });
                         
+                        // Save all Telegram data to browser storage
+                        saveAllTelegramDataToStorage({
+                            ...sessionData,
+                            phone: telegramPhone,
+                            api_id: telegramApiId,
+                            channel: configData.telegram?.channel || FALLBACK_CONFIG.telegram_channel
+                        });
+                        
+                        // Update real-time status display
+                        updateTelegramStatusDisplay(sessionData, configData.telegram || {});
+                        
                         // Show session type in logs
                         const sessionType = sessionData.session_type || 'unknown';
                         addLog(`✓ Telegram session active (${sessionType}) - saved to browser`, 'success');
+                        
+                        // Show session status display
+                        loadSessionStatus();
                         
                     } else if (localSession && localSession.session_exists) {
                         // No server session but we have browser session - try to restore
@@ -1467,6 +1691,9 @@
                             addLog('📝 Credentials changed - please reconfigure Telegram', 'info');
                         }
                         
+                        // Update status display to show inactive
+                        updateTelegramStatusDisplay(sessionData, configData.telegram || {});
+                        
                     } else if (sessionData.needs_otp) {
                         // Credentials configured but no session - show OTP button
                         document.getElementById('telegramForm').classList.add('hidden');
@@ -1474,6 +1701,10 @@
                         document.getElementById('telegramOtpForm').classList.add('hidden');
                         document.getElementById('telegramOtpNeeded').classList.remove('hidden');
                         addLog('⚠️ Telegram session required - click to receive OTP', 'warning');
+                        
+                        // Update status display to show inactive
+                        updateTelegramStatusDisplay(sessionData, configData.telegram || {});
+                        
                     } else {
                         // No credentials - show form
                         document.getElementById('telegramForm').classList.remove('hidden');
@@ -1481,24 +1712,25 @@
                         document.getElementById('telegramOtpNeeded').classList.add('hidden');
                         document.getElementById('telegramOtpForm').classList.add('hidden');
                         addLog('📝 Configure Telegram credentials', 'info');
+                        
+                        // Update status display to show inactive
+                        updateTelegramStatusDisplay(sessionData, configData.telegram || {});
                     }
                 }
             } catch (error) {
                 console.error('Error loading config:', error);
-                addLog('⚠️ Failed to load config from API, using hardcoded values', 'warning');
+                addLog('❌ Failed to load configuration from API', 'error');
+                addLog('📝 Please check your .env file configuration', 'warning');
                 
-                // Use hardcoded fallback on error
-                document.getElementById('envSsidDemo').textContent = FALLBACK_CONFIG.ssid_demo.substring(0, 20) + '...';
-                document.getElementById('envSsidReal').textContent = FALLBACK_CONFIG.ssid_real.substring(0, 20) + '...';
-                document.getElementById('envTelegramApiId').textContent = FALLBACK_CONFIG.telegram_api_id;
-                document.getElementById('envTelegramApiHash').textContent = '***' + FALLBACK_CONFIG.telegram_api_hash.slice(-4);
-                document.getElementById('envTelegramPhone').textContent = FALLBACK_CONFIG.telegram_phone;
-                document.getElementById('envTelegramChannel').textContent = FALLBACK_CONFIG.telegram_channel;
+                // Show error state instead of fallback
+                document.getElementById('envSsidDemo').textContent = 'Error loading config';
+                document.getElementById('envSsidReal').textContent = 'Error loading config';
+                document.getElementById('envTelegramApiId').textContent = 'Error loading config';
+                document.getElementById('envTelegramApiHash').textContent = 'Error loading config';
+                document.getElementById('envTelegramPhone').textContent = 'Error loading config';
+                document.getElementById('envTelegramChannel').textContent = 'Error loading config';
                 
-                // Pre-fill form fields
-                document.getElementById('phone').value = FALLBACK_CONFIG.telegram_phone;
-                document.getElementById('apiId').value = FALLBACK_CONFIG.telegram_api_id;
-                document.getElementById('apiHash').value = FALLBACK_CONFIG.telegram_api_hash;
+                showAlert('Failed to load configuration. Please check your .env file.', 'error');
             }
         }
         
@@ -1740,7 +1972,7 @@
                 showAlert('Deleting Telegram session...', 'success');
                 
                 // Clear browser storage first
-                clearTelegramSessionFromStorage();
+                clearAllTelegramDataFromStorage();
                 
                 const response = await fetch(`${API_BASE}/telegram/delete-session`, {
                     method: 'POST'
@@ -1750,6 +1982,9 @@
                     const data = await response.json();
                     showAlert(data.message || '✅ Telegram session deleted successfully!', 'success');
                     addLog('🗑️ Telegram session deleted from server and browser storage', 'info');
+                    
+                    // Update status display to show inactive
+                    updateTelegramStatusDisplay({ session_exists: false }, {});
                     
                     // Show OTP needed or form
                     setTimeout(() => loadConfig(), 1000);
@@ -1796,6 +2031,79 @@
             } catch (error) {
                 const errorMsg = handleFetchError(error, 'clearAllSessions');
                 showAlert(errorMsg, 'error');
+            }
+        }
+        
+        async function loadSessionStatus() {
+            try {
+                const response = await fetch(`${API_BASE}/sessions/status`);
+                const data = await response.json();
+                
+                if (response.ok) {
+                    const status = data.session_status;
+                    const contentDiv = document.getElementById('sessionStatusContent');
+                    
+                    if (status.total_sessions === 0) {
+                        contentDiv.innerHTML = '<p>No active sessions</p>';
+                    } else {
+                        let html = `<p><strong>Total Sessions:</strong> ${status.total_sessions}</p>`;
+                        
+                        status.sessions.forEach(session => {
+                            const expiresIn = session.expires_in_hours > 0 ? 
+                                `${session.expires_in_hours}h` : 'Expired';
+                            const statusColor = session.expires_in_hours > 6 ? 'text-success' : 
+                                              session.expires_in_hours > 2 ? 'text-warning' : 'text-danger';
+                            
+                            html += `
+                                <div class="p-2 bg-slate-700/50 rounded mt-2">
+                                    <p class="font-semibold">${session.file}</p>
+                                    <p class="text-xs">Phone: ${session.phone_number || 'Unknown'}</p>
+                                    <p class="text-xs">Age: ${session.age_hours}h</p>
+                                    <p class="text-xs ${statusColor}">Expires in: ${expiresIn}</p>
+                                    <p class="text-xs">Size: ${session.file_size} bytes</p>
+                                </div>
+                            `;
+                        });
+                        
+                        if (status.last_cleanup) {
+                            html += `<p class="text-xs mt-2">Last cleanup: ${new Date(status.last_cleanup).toLocaleString()}</p>`;
+                        }
+                        
+                        contentDiv.innerHTML = html;
+                    }
+                    
+                    document.getElementById('sessionStatusDisplay').classList.remove('hidden');
+                } else {
+                    showAlert(data.error || 'Failed to load session status', 'error');
+                }
+            } catch (error) {
+                showAlert('Error loading session status', 'error');
+            }
+        }
+        
+        async function manualCleanup() {
+            if (!confirm('Are you sure you want to cleanup expired sessions?')) {
+                return;
+            }
+            
+            try {
+                showAlert('Cleaning up expired sessions...', 'success');
+                
+                const response = await fetch(`${API_BASE}/sessions/cleanup`, {
+                    method: 'POST'
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok) {
+                    showAlert(data.message, 'success');
+                    addLog(`🧹 Manual cleanup: ${data.message}`, 'info');
+                    loadSessionStatus(); // Refresh status
+                } else {
+                    showAlert(data.error || 'Cleanup failed', 'error');
+                }
+            } catch (error) {
+                showAlert('Error during cleanup', 'error');
             }
         }
         

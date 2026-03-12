@@ -16,6 +16,12 @@ import sys
 # Add parent directory to path
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
+# Import session cleanup system
+from session_cleanup import register_session, update_session_access, cleanup_expired_sessions, get_session_status
+
+# Import Telegram components
+from telethon.sessions import StringSession
+
 # Import trading modules
 from telegram.main import (
     main as telegram_main,
@@ -352,13 +358,6 @@ def check_telegram_session():
         # Session exists if either file exists or string session is set
         session_exists = session_file_exists or session_env_exists
         
-        # Check if credentials are configured
-        api_id = os.getenv('TELEGRAM_API_ID')
-        api_hash = os.getenv('TELEGRAM_API_HASH')
-        phone = os.getenv('TELEGRAM_PHONE')
-        
-        credentials_configured = bool(api_id and api_hash and phone)
-        
         # Determine session type for debugging
         session_type = None
         if session_file_exists:
@@ -366,12 +365,20 @@ def check_telegram_session():
         elif session_env_exists:
             session_type = 'string'
         
+        # Check if credentials are configured
+        api_id = os.getenv('TELEGRAM_API_ID')
+        api_hash = os.getenv('TELEGRAM_API_HASH')
+        phone = os.getenv('TELEGRAM_PHONE')
+        
+        credentials_configured = bool(api_id and api_hash and phone)
+        
         return jsonify({
             'session_exists': session_exists,
             'credentials_configured': credentials_configured,
             'needs_otp': credentials_configured and not session_exists,
             'phone': phone if phone else None,
-            'session_type': session_type
+            'session_type': session_type,
+            'string_session_exists': session_env_exists
         })
     
     except Exception as e:
@@ -432,6 +439,31 @@ def send_telegram_code():
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
+@app.route('/api/sessions/status', methods=['GET'])
+def get_sessions_status():
+    """Get session status and cleanup information"""
+    try:
+        status = get_session_status()
+        return jsonify({
+            'success': True,
+            'session_status': status
+        })
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/sessions/cleanup', methods=['POST'])
+def manual_session_cleanup():
+    """Manual session cleanup"""
+    try:
+        result = cleanup_expired_sessions()
+        return jsonify({
+            'success': True,
+            'message': f'Cleanup completed. Deleted {result["deleted_count"]} files.',
+            'result': result
+        })
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
 @app.route('/api/telegram/verify-otp', methods=['POST'])
 def verify_telegram_otp():
     """
@@ -482,10 +514,47 @@ def verify_telegram_otp():
         # Clear temp hash
         temp_phone_code_hash = None
         
+        # Get the string session from the created session file
+        session_file = 'po_vip_testing.session'
+        string_session = None
+        
+        if os.path.exists(session_file):
+            try:
+                # Read the session file and convert to string session
+                from telethon.sync import TelegramClient
+                temp_client = TelegramClient(session_file, api_id, api_hash)
+                temp_client.connect()
+                if temp_client.is_user_authorized():
+                    string_session = StringSession.save(temp_client.session)
+                    temp_client.disconnect()
+                    
+                    # Save string session to .env file
+                    env_path = os.path.join(os.path.dirname(__file__), '.env')
+                    set_key(env_path, 'TELEGRAM_STRING_SESSION', string_session)
+                    load_dotenv(override=True)
+                    
+                    # Register session with cleanup system
+                    register_session(session_file, phone)
+                    
+                    # Delete the session file since we now have string session
+                    os.remove(session_file)
+                    if os.path.exists(session_file + '-journal'):
+                        os.remove(session_file + '-journal')
+                    
+                    log_message("✅ String session saved to .env file")
+                    
+                else:
+                    temp_client.disconnect()
+                    
+            except Exception as e:
+                print(f"Error converting session to string: {e}")
+        
         return jsonify({
             'success': True,
             'message': 'Telegram session created successfully!',
-            'session_exists': True
+            'session_exists': True,
+            'session_registered': True,
+            'string_session_created': bool(string_session)
         })
     
     except Exception as e:
@@ -494,7 +563,7 @@ def verify_telegram_otp():
 @app.route('/api/telegram/delete-session', methods=['POST'])
 def delete_telegram_session():
     """
-    Delete Telegram session files
+    Delete Telegram session files and string session
     """
     try:
         session_files = [
@@ -508,16 +577,24 @@ def delete_telegram_session():
                 os.remove(session_file)
                 deleted_files.append(session_file)
         
-        if deleted_files:
+        # Also remove string session from .env
+        env_path = os.path.join(os.path.dirname(__file__), '.env')
+        set_key(env_path, 'TELEGRAM_STRING_SESSION', '')
+        load_dotenv(override=True)
+        
+        if deleted_files or os.getenv('TELEGRAM_STRING_SESSION') == '':
             return jsonify({
                 'success': True,
-                'message': f'Deleted {len(deleted_files)} session file(s)',
-                'deleted_files': deleted_files
+                'message': f'Deleted {len(deleted_files)} session file(s) and cleared string session',
+                'deleted_files': deleted_files,
+                'string_session_cleared': True
             })
         else:
             return jsonify({
                 'success': True,
-                'message': 'No session files found to delete'
+                'message': 'No session files found to delete',
+                'deleted_files': deleted_files,
+                'string_session_cleared': True
             })
     
     except Exception as e:

@@ -624,31 +624,30 @@ async def main():
         log_message(f"❌ Failed to connect to PocketOption: {e}")
         return
     
-    # Connect to Telegram - use session file directly
+    # Connect to Telegram - ONLY STRING SESSIONS (no session files)
     if STRING_SESSION:
         log_message("🔐 Using string session")
         client = TelegramClient(StringSession(STRING_SESSION), API_ID, API_HASH)
-    else:
-        print("📁 Using file session: po_vip_testing.session")
-        client = TelegramClient('po_vip_testing', API_ID, API_HASH)
-    
-    try:
-        await client.start()
-    except Exception as e:
-        if "database is locked" in str(e).lower():
-            log_message("🔒 Session database locked - retrying...")
-            # Wait a moment and retry once
-            import time
-            time.sleep(2)
-            try:
-                await client.start()
-                log_message("✅ Telegram connection successful on retry!")
-            except Exception as e2:
-                log_message(f"❌ Telegram connection error (retry failed): {e2}")
+        
+        try:
+            # Connect first, then check if authorized
+            await client.connect()
+            
+            # Check if already authorized
+            if not await client.is_user_authorized():
+                log_message("❌ String session not authorized - please check your TELEGRAM_STRING_SESSION in .env")
+                await client.disconnect()
                 return
-        else:
-            log_message(f"❌ Telegram connection error: {e}")
+            
+            log_message("✅ Telegram session authorized successfully")
+            
+        except Exception as e:
+            log_message(f"❌ Telegram connection error with string session: {e}")
             return
+    else:
+        log_message("❌ No string session found - please create a session via web interface first")
+        log_message("� Set TELEGRAM_STRING_SESSION in .env or use the web interface to create a session")
+        return
     
     # Connect to ALL channels
     channels = []
