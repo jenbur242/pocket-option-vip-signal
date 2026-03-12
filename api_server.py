@@ -1689,6 +1689,69 @@ def get_mode_history():
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
+@app.route('/api/sessions/clear', methods=['POST'])
+def clear_sessions():
+    """Clear all sessions and create new session file"""
+    try:
+        from session_cleanup import save_sessions, get_session_stats
+        import os
+        
+        session_file = 'sessions.json'
+        
+        # Delete existing session file if it exists
+        if os.path.exists(session_file):
+            try:
+                os.remove(session_file)
+                print(f"Deleted existing session file: {session_file}")
+            except Exception as e:
+                print(f"Warning: Could not delete session file: {e}")
+        
+        # Create new empty session file
+        empty_sessions = {}
+        save_sessions(empty_sessions)
+        
+        # Get new session stats
+        stats = get_session_stats()
+        
+        return jsonify({
+            'success': True,
+            'message': 'All sessions cleared successfully',
+            'action': 'deleted_and_recreated',
+            'session_file': session_file,
+            'new_stats': stats,
+            'timestamp': datetime.now().isoformat()
+        })
+    
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': str(e),
+            'message': 'Failed to clear sessions'
+        }), 500
+
+@app.route('/api/sessions/status', methods=['GET'])
+def get_sessions_status():
+    """Get current session status"""
+    try:
+        from session_cleanup import get_session_stats, get_all_sessions
+        
+        stats = get_session_stats()
+        all_sessions = get_all_sessions()
+        
+        return jsonify({
+            'success': True,
+            'stats': stats,
+            'active_sessions': all_sessions,
+            'timestamp': datetime.now().isoformat()
+        })
+    
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': str(e),
+            'message': 'Failed to get session status'
+        }), 500
+
 def run_trading_bot():
     """Run trading bot continuously - no parameters needed, reads from .env"""
     global trading_active
@@ -1791,6 +1854,8 @@ if __name__ == '__main__':
     print("   GET  /api/trades/results - Get trade results")
     print("   GET  /api/trades/upcoming - Get upcoming trades")
     print("   GET  /api/trades/analysis - Get trade analysis")
+    print("   POST /api/sessions/clear - Clear all sessions")
+    print("   GET  /api/sessions/status - Get session status")
     print("=" * 60)
     print("INFO: Quick Start:")
     print(f"   1. Open http://localhost:{port} in your browser")

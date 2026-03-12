@@ -251,6 +251,7 @@
                 <button class="btn" id="btn-real-mode" onclick="setDataMode('real')">📊 Real Data</button>
                 <button class="btn" id="btn-dummy-mode" onclick="setDataMode('dummy')">🎭 Dummy Data</button>
                 <button class="btn" onclick="clearCache()">🗑️ Clear Cache</button>
+                <button class="btn" onclick="clearAllSessions()">🧹 Clear Session</button>
                 <button class="btn" onclick="testSessionStorage()">🧪 Test Storage</button>
                 <button class="btn" onclick="showStorageStatus()">📊 Storage Status</button>
             </div>
@@ -828,6 +829,35 @@
                 refreshStatus();
                 getCurrentMode();
             }, 500);
+        }
+
+        async function clearAllSessions() {
+            try {
+                showAlert('Clearing all sessions...', 'info');
+                
+                const result = await apiCall('/api/sessions/clear', 'POST', {}, false);
+                
+                if (result.success) {
+                    showAlert(result.message, 'success');
+                    console.log('Session clear result:', result);
+                    
+                    // Clear browser session storage too
+                    sessionManager.clearAll();
+                    dataCache.clearAll();
+                    
+                    // Refresh all data
+                    setTimeout(() => {
+                        fetchBalance();
+                        refreshStatus();
+                        getCurrentMode();
+                        showStorageStatus();
+                    }, 500);
+                } else {
+                    showAlert('Failed to clear sessions', 'error');
+                }
+            } catch (error) {
+                showAlert(`Failed to clear sessions: ${error.message}`, 'error');
+            }
         }
 
         // Balance Functions
