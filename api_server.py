@@ -425,30 +425,39 @@ def request_session_renewal():
             
             try:
                 # Create temporary session for OTP verification
-                client = TelegramClient('renewal_session', API_ID, API_HASH)
-                await client.connect()
-                await client.sign_in(PHONE_NUMBER, otp_code)
+                async def complete_renewal():
+                    client = TelegramClient('renewal_session', API_ID, API_HASH)
+                    await client.connect()
+                    await client.sign_in(PHONE_NUMBER, otp_code)
+                    
+                    # Convert to string session
+                    string_session = StringSession.save(client.session)
+                    
+                    # Save to .env
+                    env_path = os.path.join(os.path.dirname(__file__), '.env')
+                    set_key(env_path, 'TELEGRAM_STRING_SESSION', string_session)
+                    load_dotenv(override=True)
+                    
+                    # Clean up
+                    await client.disconnect()
+                    
+                    # Remove renewal request
+                    if os.path.exists('session_renewal_request.json'):
+                        os.remove('session_renewal_request.json')
+                    
+                    # Clean up temporary files
+                    temp_files = ['renewal_session.session', 'renewal_session.session-journal']
+                    for file in temp_files:
+                        if os.path.exists(file):
+                            os.remove(file)
+                    
+                    return string_session
                 
-                # Convert to string session
-                string_session = StringSession.save(client.session)
-                
-                # Save to .env
-                env_path = os.path.join(os.path.dirname(__file__), '.env')
-                set_key(env_path, 'TELEGRAM_STRING_SESSION', string_session)
-                load_dotenv(override=True)
-                
-                # Clean up
-                await client.disconnect()
-                
-                # Remove renewal request
-                if os.path.exists('session_renewal_request.json'):
-                    os.remove('session_renewal_request.json')
-                
-                # Clean up temporary files
-                temp_files = ['renewal_session.session', 'renewal_session.session-journal']
-                for file in temp_files:
-                    if os.path.exists(file):
-                        os.remove(file)
+                # Run async function
+                loop = asyncio.new_event_loop()
+                asyncio.set_event_loop(loop)
+                string_session = loop.run_until_complete(complete_renewal())
+                loop.close()
                 
                 return jsonify({
                     'success': True,
@@ -487,46 +496,56 @@ def complete_auto_session():
         session_name = status.get('session_name')
         phone = status.get('phone')
         api_id = status.get('api_id')
+        api_hash = status.get('api_hash')
         
         logger.info(f"🔍 Completing auto-session with OTP: {otp_code}")
         
         try:
             # Complete the session
-            client = TelegramClient(session_name, api_id, api_hash)
-            await client.connect()
-            await client.sign_in(phone, otp_code)
+            async def complete_auto_session():
+                client = TelegramClient(session_name, api_id, api_hash)
+                await client.connect()
+                await client.sign_in(phone, otp_code)
+                
+                # Convert to string session
+                string_session = StringSession.save(client.session)
+                
+                # Save to .env
+                env_path = os.path.join(os.path.dirname(__file__), '.env')
+                set_key(env_path, 'TELEGRAM_STRING_SESSION', string_session)
+                load_dotenv(override=True)
+                
+                # Update status
+                success_status = {
+                    'auto_session_requested': True,
+                    'completed_at': datetime.now().isoformat(),
+                    'status': 'completed',
+                    'string_session_length': len(string_session),
+                    'hostname': status.get('hostname'),
+                    'railway_deploy': True
+                }
+                
+                with open('railway_session_status.json', 'w') as f:
+                    json.dump(success_status, f, indent=2)
+                
+                logger.info("SUCCESS: Auto-session completed and saved to .env")
+                logger.info("RAILWAY: Railway deployment ready!")
+                
+                await client.disconnect()
+                
+                # Clean up temporary files
+                temp_files = [f"{session_name}.session", f"{session_name}.session-journal"]
+                for file in temp_files:
+                    if os.path.exists(file):
+                        os.remove(file)
+                
+                return string_session
             
-            # Convert to string session
-            string_session = StringSession.save(client.session)
-            
-            # Save to .env
-            env_path = os.path.join(os.path.dirname(__file__), '.env')
-            set_key(env_path, 'TELEGRAM_STRING_SESSION', string_session)
-            load_dotenv(override=True)
-            
-            # Update status
-            success_status = {
-                'auto_session_requested': True,
-                'completed_at': datetime.now().isoformat(),
-                'status': 'completed',
-                'string_session_length': len(string_session),
-                'hostname': status.get('hostname'),
-                'railway_deploy': True
-            }
-            
-            with open('railway_session_status.json', 'w') as f:
-                json.dump(success_status, f, indent=2)
-            
-            logger.info("✅ Auto-session completed and saved to .env")
-            logger.info("🚀 Railway deployment ready!")
-            
-            await client.disconnect()
-            
-            # Clean up temporary files
-            temp_files = [f"{session_name}.session", f"{session_name}.session-journal"]
-            for file in temp_files:
-                if os.path.exists(file):
-                    os.remove(file)
+            # Run async function
+            loop = asyncio.new_event_loop()
+            asyncio.set_event_loop(loop)
+            string_session = loop.run_until_complete(complete_auto_session())
+            loop.close()
             
             return jsonify({
                 'success': True,
@@ -1417,7 +1436,7 @@ def run_trading_bot():
         multiplier = get_multiplier()
         martingale_step = int(os.getenv('MARTINGALE_STEP', '0'))
         
-        print(f"🚀 Starting trading bot with config:")
+        print(f"START: Starting trading bot with config:")
         print(f"   Trade Amount: ${trade_amount} (from .env)")
         print(f"   Account Type: {'DEMO' if is_demo else 'REAL'}")
         print(f"   Multiplier: {multiplier}x")
@@ -1491,12 +1510,12 @@ if __name__ == '__main__':
     port = int(os.getenv('PORT', 5000))
     
     print("=" * 60)
-    print("🚀 Pocket Option Trading API Server")
+    print("START: Pocket Option Trading API Server")
     print("=" * 60)
-    print(f"📡 Server starting on port {port}")
-    print(f"🌐 Frontend available at http://localhost:{port}")
+    print(f"SERVER: Server starting on port {port}")
+    print(f"FRONTEND: Frontend available at http://localhost:{port}")
     print("=" * 60)
-    print("📚 API Endpoints:")
+    print("API: API Endpoints:")
     print("   POST /api/ssid - Set SSID")
     print("   POST /api/telegram/otp - Configure Telegram")
     print("   POST /api/trading/start - Start trading")
@@ -1506,13 +1525,13 @@ if __name__ == '__main__':
     print("   GET  /api/trades/upcoming - Get upcoming trades")
     print("   GET  /api/trades/analysis - Get trade analysis")
     print("=" * 60)
-    print("💡 Quick Start:")
+    print("INFO: Quick Start:")
     print(f"   1. Open http://localhost:{port} in your browser")
     print("   2. Configure SSID and Telegram credentials")
     print("   3. Set trading parameters and click Start Trading")
     print("=" * 60)
     
-    # 🔥 AUTO-START TRADING BOT ON SERVER STARTUP
+    # AUTO-START TRADING BOT ON SERVER STARTUP
     # Bot starts automatically and runs continuously
     def auto_start_bot():
         """Auto-start trading bot in background"""

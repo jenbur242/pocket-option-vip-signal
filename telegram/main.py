@@ -27,13 +27,13 @@ load_dotenv(override=True)  # Force override with .env file if exists
 IS_RAILWAY = os.getenv('RAILWAY_ENVIRONMENT') is not None
 
 if IS_RAILWAY:
-    print("🚂 Running on Railway - Using Railway environment variables")
+    print("RAILWAY: Running on Railway - Using Railway environment variables")
 else:
-    print("💻 Running locally - Using .env file")
+    print("LOCAL: Running locally - Using .env file")
 
 # Diagnostic: Print TRADE_AMOUNT immediately after loading
-print(f"🔍 DEBUG: TRADE_AMOUNT environment variable = '{os.getenv('TRADE_AMOUNT', 'NOT SET')}'")
-print(f"🔍 DEBUG: All TRADE_AMOUNT related vars:")
+print(f"DEBUG: TRADE_AMOUNT environment variable = '{os.getenv('TRADE_AMOUNT', 'NOT SET')}'")
+print(f"DEBUG: All TRADE_AMOUNT related vars:")
 for key in os.environ:
     if 'TRADE' in key.upper() or 'AMOUNT' in key.upper():
         print(f"   {key} = {os.environ[key]}")
