@@ -1,0 +1,435 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pocket Option Trading Bot Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+        .pulse { animation: pulse 2s infinite; }
+        .status-online { color: #10b981; }
+        .status-offline { color: #ef4444; }
+        .status-warning { color: #f59e0b; }
+    </style>
+</head>
+<body class="bg-gray-100 min-h-screen">
+    <!-- Header -->
+    <header class="bg-gradient-to-r from-blue-600 to-purple-600 text-white shadow-lg">
+        <div class="container mx-auto px-4 py-6">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center space-x-3">
+                    <i class="fas fa-robot text-3xl"></i>
+                    <div>
+                        <h1 class="text-2xl font-bold">Pocket Option Trading Bot</h1>
+                        <p class="text-sm opacity-90">Real-time Trading Dashboard</p>
+                    </div>
+                </div>
+                <div class="flex items-center space-x-4">
+                    <span id="connectionStatus" class="flex items-center space-x-2">
+                        <i class="fas fa-circle status-offline"></i>
+                        <span>Offline</span>
+                    </span>
+                    <button onclick="refreshAll()" class="bg-white text-blue-600 px-4 py-2 rounded-lg hover:bg-blue-50 transition">
+                        <i class="fas fa-sync-alt mr-2"></i>Refresh
+                    </button>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="container mx-auto px-4 py-8">
+        <!-- Status Cards -->
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+            <!-- Bot Status Card -->
+            <div class="bg-white rounded-xl shadow-md p-6">
+                <div class="flex items-center justify-between mb-4">
+                    <div class="bg-blue-100 p-3 rounded-lg">
+                        <i class="fas fa-robot text-blue-600 text-xl"></i>
+                    </div>
+                    <span id="botStatusIndicator" class="text-sm font-medium px-2 py-1 rounded-full bg-gray-100 text-gray-600">
+                        Unknown
+                    </span>
+                </div>
+                <h3 class="text-gray-500 text-sm font-medium">Bot Status</h3>
+                <p id="botStatus" class="text-2xl font-bold text-gray-800">Loading...</p>
+            </div>
+
+            <!-- Health Status Card -->
+            <div class="bg-white rounded-xl shadow-md p-6">
+                <div class="flex items-center justify-between mb-4">
+                    <div class="bg-green-100 p-3 rounded-lg">
+                        <i class="fas fa-heartbeat text-green-600 text-xl"></i>
+                    </div>
+                    <span id="healthIndicator" class="text-sm font-medium px-2 py-1 rounded-full bg-green-100 text-green-600">
+                        Healthy
+                    </span>
+                </div>
+                <h3 class="text-gray-500 text-sm font-medium">API Health</h3>
+                <p id="healthStatus" class="text-2xl font-bold text-gray-800">Checking...</p>
+            </div>
+
+            <!-- Bot Task ID Card -->
+            <div class="bg-white rounded-xl shadow-md p-6">
+                <div class="flex items-center justify-between mb-4">
+                    <div class="bg-purple-100 p-3 rounded-lg">
+                        <i class="fas fa-fingerprint text-purple-600 text-xl"></i>
+                    </div>
+                </div>
+                <h3 class="text-gray-500 text-sm font-medium">Task ID</h3>
+                <p id="taskId" class="text-lg font-bold text-gray-800 truncate">None</p>
+            </div>
+
+            <!-- Last Update Card -->
+            <div class="bg-white rounded-xl shadow-md p-6">
+                <div class="flex items-center justify-between mb-4">
+                    <div class="bg-orange-100 p-3 rounded-lg">
+                        <i class="fas fa-clock text-orange-600 text-xl"></i>
+                    </div>
+                </div>
+                <h3 class="text-gray-500 text-sm font-medium">Last Update</h3>
+                <p id="lastUpdate" class="text-lg font-bold text-gray-800">Never</p>
+            </div>
+        </div>
+
+        <!-- Control Panel -->
+        <div class="bg-white rounded-xl shadow-md p-6 mb-8">
+            <h2 class="text-xl font-bold text-gray-800 mb-6 flex items-center">
+                <i class="fas fa-gamepad mr-3 text-blue-600"></i>
+                Bot Control Panel
+            </h2>
+            
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <button onclick="startBot()" class="bg-green-500 hover:bg-green-600 text-white font-medium py-3 px-6 rounded-lg transition flex items-center justify-center space-x-2">
+                    <i class="fas fa-play"></i>
+                    <span>Start Bot</span>
+                </button>
+                
+                <button onclick="stopBot()" class="bg-red-500 hover:bg-red-600 text-white font-medium py-3 px-6 rounded-lg transition flex items-center justify-center space-x-2">
+                    <i class="fas fa-stop"></i>
+                    <span>Stop Bot</span>
+                </button>
+                
+                <button onclick="restartBot()" class="bg-yellow-500 hover:bg-yellow-600 text-white font-medium py-3 px-6 rounded-lg transition flex items-center justify-center space-x-2">
+                    <i class="fas fa-redo"></i>
+                    <span>Restart Bot</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- API Response Display -->
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <!-- Root API Info -->
+            <div class="bg-white rounded-xl shadow-md p-6">
+                <h2 class="text-xl font-bold text-gray-800 mb-4 flex items-center">
+                    <i class="fas fa-info-circle mr-3 text-blue-600"></i>
+                    API Information
+                </h2>
+                <div id="rootInfo" class="bg-gray-50 rounded-lg p-4">
+                    <p class="text-gray-500">Loading API info...</p>
+                </div>
+            </div>
+
+            <!-- Status Details -->
+            <div class="bg-white rounded-xl shadow-md p-6">
+                <h2 class="text-xl font-bold text-gray-800 mb-4 flex items-center">
+                    <i class="fas fa-cog mr-3 text-purple-600"></i>
+                    Bot Status Details
+                </h2>
+                <div id="statusDetails" class="bg-gray-50 rounded-lg p-4 font-mono text-sm max-h-64 overflow-y-auto">
+                    <p class="text-gray-500">Loading status details...</p>
+                </div>
+            </div>
+
+            <!-- API Logs -->
+            <div class="bg-white rounded-xl shadow-md p-6">
+                <h2 class="text-xl font-bold text-gray-800 mb-4 flex items-center">
+                    <i class="fas fa-terminal mr-3 text-green-600"></i>
+                    API Response Logs
+                </h2>
+                <div id="apiLogs" class="bg-gray-900 text-green-400 rounded-lg p-4 h-64 overflow-y-auto font-mono text-sm">
+                    <p>Dashboard initialized...</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Endpoints Reference -->
+        <div class="bg-white rounded-xl shadow-md p-6 mt-8">
+            <h2 class="text-xl font-bold text-gray-800 mb-4 flex items-center">
+                <i class="fas fa-list mr-3 text-purple-600"></i>
+                API Endpoints
+            </h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                <div class="border rounded-lg p-3">
+                    <code class="text-sm font-mono text-blue-600">GET /</code>
+                    <p class="text-xs text-gray-600 mt-1">Root endpoint - API info</p>
+                </div>
+                <div class="border rounded-lg p-3">
+                    <code class="text-sm font-mono text-blue-600">GET /health</code>
+                    <p class="text-xs text-gray-600 mt-1">Health check endpoint</p>
+                </div>
+                <div class="border rounded-lg p-3">
+                    <code class="text-sm font-mono text-blue-600">GET /status</code>
+                    <p class="text-xs text-gray-600 mt-1">Bot status endpoint</p>
+                </div>
+                <div class="border rounded-lg p-3">
+                    <code class="text-sm font-mono text-blue-600">GET /start</code>
+                    <p class="text-xs text-gray-600 mt-1">Start trading bot</p>
+                </div>
+                <div class="border rounded-lg p-3">
+                    <code class="text-sm font-mono text-blue-600">GET /stop</code>
+                    <p class="text-xs text-gray-600 mt-1">Stop trading bot</p>
+                </div>
+                <div class="border rounded-lg p-3">
+                    <code class="text-sm font-mono text-blue-600">GET /docs</code>
+                    <p class="text-xs text-gray-600 mt-1">OpenAPI documentation</p>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-gray-800 text-white py-6 mt-12">
+        <div class="container mx-auto px-4 text-center">
+            <p class="text-sm opacity-75">Pocket Option Trading Bot Dashboard © 2026</p>
+            <p class="text-xs opacity-50 mt-2">API Endpoint: <span id="apiEndpoint">https://pocket-option-vip-signal-production.up.railway.app</span></p>
+        </div>
+    </footer>
+
+    <script>
+        // Configuration
+        const API_BASE = 'https://pocket-option-vip-signal-production.up.railway.app';
+        
+        // State management
+        let botState = {
+            running: false,
+            taskId: null,
+            lastUpdate: null,
+            connectionStatus: 'offline'
+        };
+
+        // Utility functions
+        function log(message, type = 'info') {
+            const logs = document.getElementById('apiLogs');
+            const timestamp = new Date().toLocaleTimeString();
+            const color = type === 'error' ? '#ef4444' : type === 'success' ? '#10b981' : '#10b981';
+            logs.innerHTML += `<p style="color: ${color}">[${timestamp}] ${message}</p>`;
+            logs.scrollTop = logs.scrollHeight;
+        }
+
+        function updateConnectionStatus(status) {
+            const statusElement = document.getElementById('connectionStatus');
+            const icon = statusElement.querySelector('i');
+            const text = statusElement.querySelector('span');
+            
+            if (status === 'online') {
+                icon.className = 'fas fa-circle status-online';
+                text.textContent = 'Online';
+            } else {
+                icon.className = 'fas fa-circle status-offline';
+                text.textContent = 'Offline';
+            }
+            
+            botState.connectionStatus = status;
+        }
+
+        function updateLastUpdate() {
+            const element = document.getElementById('lastUpdate');
+            if (botState.lastUpdate) {
+                const time = new Date(botState.lastUpdate).toLocaleTimeString();
+                element.textContent = time;
+            } else {
+                element.textContent = 'Never';
+            }
+        }
+
+        // API functions
+        async function apiCall(endpoint, method = 'GET') {
+            try {
+                log(`Calling ${method} ${endpoint}`);
+                const response = await fetch(`${API_BASE}${endpoint}`);
+                const data = await response.json();
+                
+                if (response.ok) {
+                    log(`✓ ${endpoint} - Success`, 'success');
+                    updateConnectionStatus('online');
+                    return { success: true, data, status: response.status };
+                } else {
+                    log(`✗ ${endpoint} - Error: ${response.status}`, 'error');
+                    return { success: false, error: data, status: response.status };
+                }
+            } catch (error) {
+                log(`✗ ${endpoint} - Network error: ${error.message}`, 'error');
+                updateConnectionStatus('offline');
+                return { success: false, error: error.message };
+            }
+        }
+
+        // Dashboard functions
+        async function loadRoot() {
+            const result = await apiCall('/');
+            if (result.success) {
+                const data = result.data;
+                log(`Root endpoint loaded: ${data.message}`, 'success');
+                
+                // Update header with API info
+                document.querySelector('header h1').innerHTML = `
+                    <i class="fas fa-robot text-3xl mr-3"></i>
+                    ${data.message || 'Pocket Option Trading Bot'}
+                    <span class="text-sm ml-3 opacity-75">v${data.version || '1.0.0'}</span>
+                `;
+                
+                // Update root info section
+                const rootInfo = document.getElementById('rootInfo');
+                rootInfo.innerHTML = `
+                    <div class="space-y-3">
+                        <div class="flex justify-between items-center">
+                            <span class="text-gray-600">Status:</span>
+                            <span class="font-medium text-green-600">${data.status || 'Unknown'}</span>
+                        </div>
+                        <div class="flex justify-between items-center">
+                            <span class="text-gray-600">Message:</span>
+                            <span class="font-medium">${data.message || 'N/A'}</span>
+                        </div>
+                        <div class="flex justify-between items-center">
+                            <span class="text-gray-600">Version:</span>
+                            <span class="font-medium">${data.version || '1.0.0'}</span>
+                        </div>
+                        <div class="flex justify-between items-center">
+                            <span class="text-gray-600">Environment:</span>
+                            <span class="font-medium">${data.environment || 'Unknown'}</span>
+                        </div>
+                        <div class="flex justify-between items-center">
+                            <span class="text-gray-600">Timestamp:</span>
+                            <span class="font-medium text-sm">${data.timestamp || 'N/A'}</span>
+                        </div>
+                    </div>
+                `;
+                
+                return data;
+            }
+            return null;
+        }
+
+        async function loadStatus() {
+            const result = await apiCall('/status');
+            if (result.success) {
+                const data = result.data;
+                
+                // Update bot status
+                document.getElementById('botStatus').textContent = data.status || 'Unknown';
+                document.getElementById('statusDetails').innerHTML = `<pre>${JSON.stringify(data, null, 2)}</pre>`;
+                
+                // Update task ID
+                if (data.task_id) {
+                    document.getElementById('taskId').textContent = data.task_id;
+                    botState.taskId = data.task_id;
+                }
+                
+                // Update status indicator
+                const indicator = document.getElementById('botStatusIndicator');
+                if (data.status === 'running') {
+                    indicator.className = 'text-sm font-medium px-2 py-1 rounded-full bg-green-100 text-green-600';
+                    indicator.textContent = 'Running';
+                    botState.running = true;
+                } else if (data.status === 'error') {
+                    indicator.className = 'text-sm font-medium px-2 py-1 rounded-full bg-red-100 text-red-600';
+                    indicator.textContent = 'Error';
+                    botState.running = false;
+                } else {
+                    indicator.className = 'text-sm font-medium px-2 py-1 rounded-full bg-gray-100 text-gray-600';
+                    indicator.textContent = data.status || 'Unknown';
+                    botState.running = false;
+                }
+                
+                botState.lastUpdate = new Date();
+                updateLastUpdate();
+            }
+        }
+
+        async function loadHealth() {
+            const result = await apiCall('/health');
+            if (result.success) {
+                const data = result.data;
+                document.getElementById('healthStatus').textContent = data.status || 'Unknown';
+                
+                const indicator = document.getElementById('healthIndicator');
+                if (data.status === 'healthy') {
+                    indicator.className = 'text-sm font-medium px-2 py-1 rounded-full bg-green-100 text-green-600';
+                    indicator.textContent = 'Healthy';
+                } else {
+                    indicator.className = 'text-sm font-medium px-2 py-1 rounded-full bg-red-100 text-red-600';
+                    indicator.textContent = 'Unhealthy';
+                }
+            }
+        }
+
+        async function startBot() {
+            log('Starting bot...');
+            const result = await apiCall('/start');
+            if (result.success) {
+                log(`Bot started: ${result.data.message}`, 'success');
+                setTimeout(loadStatus, 1000); // Refresh status after a delay
+            } else {
+                log(`Failed to start bot: ${result.error || 'Unknown error'}`, 'error');
+            }
+        }
+
+        async function stopBot() {
+            log('Stopping bot...');
+            const result = await apiCall('/stop');
+            if (result.success) {
+                log(`Bot stopped: ${result.data.message}`, 'success');
+                setTimeout(loadStatus, 1000);
+            } else {
+                log(`Failed to stop bot: ${result.error || 'Unknown error'}`, 'error');
+            }
+        }
+
+        async function restartBot() {
+            log('Restarting bot...');
+            await stopBot();
+            setTimeout(async () => {
+                await startBot();
+            }, 2000);
+        }
+
+        async function refreshAll() {
+            log('Refreshing all data...');
+            await Promise.all([loadRoot(), loadStatus(), loadHealth()]);
+            log('Data refreshed', 'success');
+        }
+
+        // Auto-refresh
+        function startAutoRefresh() {
+            setInterval(async () => {
+                if (botState.connectionStatus === 'online') {
+                    await Promise.all([loadRoot(), loadStatus(), loadHealth()]);
+                }
+            }, 10000); // Refresh every 10 seconds
+        }
+
+        // Initialize dashboard
+        async function initDashboard() {
+            log('Initializing dashboard...');
+            
+            // Load initial data
+            await Promise.all([loadRoot(), loadStatus(), loadHealth()]);
+            
+            // Start auto-refresh
+            startAutoRefresh();
+            
+            log('Dashboard ready', 'success');
+        }
+
+        // Start the dashboard when page loads
+        document.addEventListener('DOMContentLoaded', initDashboard);
+    </script>
+</body>
+</html>
