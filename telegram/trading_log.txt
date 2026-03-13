@@ -29,3 +29,51 @@ Connected to PocketOption!
 Using hardcoded string session
 Telegram session authorized successfully
 Ready to monitor trading signals
+2026-03-13 16:39:24 | 
+============================================================
+2026-03-13 16:39:24 | POCKET OPTION TRADING BOT
+2026-03-13 16:39:24 | ============================================================
+2026-03-13 16:39:24 | Channels: 1 channels
+2026-03-13 16:39:24 |   - Pocket_Option_Signals_Vip (monitoring)
+2026-03-13 16:39:24 | Account: DEMO
+2026-03-13 16:39:24 | Trade Amount: $5.0 (from .env)
+2026-03-13 16:39:24 | Default Duration: 2 minutes (if not specified in signal)
+2026-03-13 16:39:24 | Initial Amount: $5.0
+2026-03-13 16:39:24 | Multiplier: 2.5x (from .env)
+2026-03-13 16:39:24 | ============================================================
+2026-03-13 16:39:24 | 
+============================================================
+2026-03-13 16:39:24 | MARTINGALE AMOUNT TABLE (8 Steps)
+2026-03-13 16:39:24 | ============================================================
+2026-03-13 16:39:24 | Step 0: $      5.00
+2026-03-13 16:39:24 | Step 1: $     12.50
+2026-03-13 16:39:24 | Step 2: $     31.25
+2026-03-13 16:39:24 | Step 3: $     78.12
+2026-03-13 16:39:24 | Step 4: $    195.31
+2026-03-13 16:39:24 | Step 5: $    488.28
+2026-03-13 16:39:24 | Step 6: $   1220.70
+2026-03-13 16:39:24 | Step 7: $   3051.76
+2026-03-13 16:39:24 | ============================================================
+
+2026-03-13 16:39:24 | Connecting to PocketOption...
+2026-03-13 16:39:26 | Balance: $49073.67 USD
+2026-03-13 16:39:26 | Connected to PocketOption!
+2026-03-13 16:39:26 | Using hardcoded string session
+2026-03-13 16:39:26 | Telegram connection error: The authorization key (session file) was used under two different IP addresses simultaneously, and can no longer be used. Use the same session exclusively, or use different sessions (caused by InvokeWithLayerRequest(InitConnectionRequest(GetConfigRequest)))
+2026-03-13 16:39:26 | Attempting to create new session...
+2026-03-13 16:39:26 | [PHONE] Creating new Telegram session...
+2026-03-13 16:39:26 |    Phone: +12428018500
+2026-03-13 16:39:29 | [SMS] Sending OTP code...
+2026-03-13 16:39:31 | [OK] OTP sent to +12428018500
+2026-03-13 16:39:31 | [INFO] Phone code hash received: 53b84927e58c993462
+2026-03-13 16:39:31 | [INPUT] Please enter OTP code manually:
+2026-03-13 16:39:31 | [ERROR] No OTP code entered
+2026-03-13 18:32:28 | Connecting to PocketOption...
+2026-03-13 18:32:30 | Balance: $49073.67 USD
+2026-03-13 18:32:30 | Connected to PocketOption!
+2026-03-13 18:33:40 | Connecting to PocketOption...
+2026-03-13 18:33:42 | Balance: $49073.67 USD
+2026-03-13 18:33:42 | Connected to PocketOption!
+2026-03-13 18:35:40 | Connecting to PocketOption...
+2026-03-13 18:35:42 | Balance: $49072.67 USD
+2026-03-13 18:35:42 | Connected to PocketOption!

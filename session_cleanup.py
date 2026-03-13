@@ -1,250 +1,107 @@
-#!/usr/bin/env python3
-"""
-Session cleanup module for Railway deployment
-Handles session management and cleanup operations
-"""
-import os
-import json
-import time
-from datetime import datetime, timedelta
-from typing import Dict, Any, Optional
+from telethon.sync import TelegramClient
+from telethon.sessions import StringSession
+from termcolor import colored, cprint
+from pyfiglet import figlet_format
 
-# Session storage file
-SESSION_FILE = 'sessions.json'
-SESSION_TIMEOUT = 3600  # 1 hour in seconds
+# Hardcoded credentials
+API_ID = '34506083'
+API_HASH = '5676893fa1c0fe15eca5dbbceb3ab6a2'
+PHONE_NUMBER = '+12428018500'
 
-def register_session(session_id: str, user_data: Dict[str, Any] = None) -> bool:
-    """Register a new session"""
+def create_session_with_hardcoded_credentials():
+    """Create session string using hardcoded credentials with Telethon"""
+    cprint("Creating session with hardcoded credentials using Telethon...", "cyan")
+    
     try:
-        sessions = load_sessions()
-        
-        sessions[session_id] = {
-            'created_at': datetime.now().isoformat(),
-            'last_access': datetime.now().isoformat(),
-            'user_data': user_data or {},
-            'active': True
-        }
-        
-        save_sessions(sessions)
-        return True
-    except Exception as e:
-        print(f"Error registering session: {e}")
-        return False
-
-def update_session_access(session_id: str) -> bool:
-    """Update last access time for a session"""
-    try:
-        sessions = load_sessions()
-        
-        if session_id in sessions:
-            sessions[session_id]['last_access'] = datetime.now().isoformat()
-            sessions[session_id]['active'] = True
-            save_sessions(sessions)
-            return True
-        else:
-            return False
-    except Exception as e:
-        print(f"Error updating session access: {e}")
-        return False
-
-def cleanup_expired_sessions() -> int:
-    """Clean up expired sessions and return count of cleaned sessions"""
-    try:
-        sessions = load_sessions()
-        current_time = datetime.now()
-        cleaned_count = 0
-        
-        expired_sessions = []
-        for session_id, session_data in sessions.items():
-            last_access = datetime.fromisoformat(session_data['last_access'])
+        # Using Telethon (more stable with Python 3.14)
+        with TelegramClient(StringSession(), int(API_ID), API_HASH) as client:
+            cprint("Connecting to Telegram...", "yellow")
             
-            # Check if session is expired (older than SESSION_TIMEOUT)
-            if current_time - last_access > timedelta(seconds=SESSION_TIMEOUT):
-                expired_sessions.append(session_id)
-        
-        # Remove expired sessions
-        for session_id in expired_sessions:
-            del sessions[session_id]
-            cleaned_count += 1
-        
-        save_sessions(sessions)
-        return cleaned_count
+            # Export session string
+            session_str = client.session.save()
+            
+            cprint("=" * 50, "green")
+            cprint("SESSION STRING GENERATED:", "yellow", attrs=['bold'])
+            cprint(session_str, "cyan")
+            cprint("=" * 50, "green")
+            
+            # Save to file
+            with open("session_string.txt", "w") as f:
+                f.write(session_str)
+            cprint("Session string saved to session_string.txt", "green")
+            
+            return session_str
+            
     except Exception as e:
-        print(f"Error cleaning up sessions: {e}")
-        return 0
-
-def get_session_status(session_id: str) -> Optional[Dict[str, Any]]:
-    """Get status of a specific session"""
-    try:
-        sessions = load_sessions()
-        
-        if session_id in sessions:
-            session_data = sessions[session_id].copy()
-            
-            # Check if session is expired
-            last_access = datetime.fromisoformat(session_data['last_access'])
-            current_time = datetime.now()
-            
-            is_expired = current_time - last_access > timedelta(seconds=SESSION_TIMEOUT)
-            
-            return {
-                'session_id': session_id,
-                'created_at': session_data['created_at'],
-                'last_access': session_data['last_access'],
-                'active': session_data['active'] and not is_expired,
-                'expired': is_expired,
-                'user_data': session_data.get('user_data', {})
-            }
-        else:
-            return None
-    except Exception as e:
-        print(f"Error getting session status: {e}")
+        cprint(f"Error creating session: {e}", "red")
         return None
 
-def get_all_sessions() -> Dict[str, Any]:
-    """Get all active sessions"""
-    try:
-        sessions = load_sessions()
-        current_time = datetime.now()
-        active_sessions = {}
+def main():
+    while True:
+        cprint(colored(figlet_format('Telegram', "smslant"), "cyan", attrs=['bold']))
+        cprint(colored("Session generator\n", "magenta", attrs=['bold']))
+        cprint("[p] Pyrogram\n[t] Telethon\n[h] Use hardcoded credentials", "yellow")
+        opt = input(colored("Choose your option: ", "green")).lower()
         
-        for session_id, session_data in sessions.items():
-            last_access = datetime.fromisoformat(session_data['last_access'])
+        if "h" in opt:
+            cprint("Using hardcoded credentials...", "magenta")
+            session_str = create_session_with_hardcoded_credentials()
+            if session_str:
+                cprint("Session created successfully!", "green")
+            break
             
-            # Only include non-expired sessions
-            if current_time - last_access <= timedelta(seconds=SESSION_TIMEOUT):
-                active_sessions[session_id] = {
-                    'created_at': session_data['created_at'],
-                    'last_access': session_data['last_access'],
-                    'active': session_data['active'],
-                    'user_data': session_data.get('user_data', {})
-                }
-        
-        return active_sessions
-    except Exception as e:
-        print(f"Error getting all sessions: {e}")
-        return {}
+        elif "p" in opt:
+            cprint("You've selected pyrogram", "magenta")
+            APP_ID = int(input(colored("Enter APP ID here: ", "green")))
+            API_HASH = input(colored("Enter API HASH here: ", "green"))
+            with Client(":memory:", api_id=APP_ID, api_hash=API_HASH) as app:
+                app.storage.SESSION_STRING_FORMAT=">B?256sQ?"
+                session_str = app.export_session_string()
+                if app.get_me().is_bot:
+                    user_name = input(colored("Enter the username: ", "green"))
+                    msg = app.send_message(user_name, session_str)
+                else:
+                    msg = app.send_message("me", session_str)
+                msg.reply_text(
+                    "⬆️ This String Session is generated using https://tgsession.infotelbot.com \nPlease subscribe @InFoTelGroup ",
+                    quote=True,
+                )
+                cprint("please check your Telegram Saved Messages/user's PM for the StringSession ", "yellow")
+            break
 
-def invalidate_session(session_id: str) -> bool:
-    """Invalidate a specific session"""
-    try:
-        sessions = load_sessions()
-        
-        if session_id in sessions:
-            sessions[session_id]['active'] = False
-            save_sessions(sessions)
-            return True
-        else:
-            return False
-    except Exception as e:
-        print(f"Error invalidating session: {e}")
-        return False
-
-def load_sessions() -> Dict[str, Any]:
-    """Load sessions from file"""
-    try:
-        if os.path.exists(SESSION_FILE):
-            with open(SESSION_FILE, 'r', encoding='utf-8') as f:
-                return json.load(f)
-        else:
-            return {}
-    except (json.JSONDecodeError, FileNotFoundError) as e:
-        print(f"Error loading sessions: {e}")
-        return {}
-
-def save_sessions(sessions: Dict[str, Any]) -> bool:
-    """Save sessions to file"""
-    try:
-        with open(SESSION_FILE, 'w', encoding='utf-8') as f:
-            json.dump(sessions, f, indent=2, default=str)
-        return True
-    except Exception as e:
-        print(f"Error saving sessions: {e}")
-        return False
-
-def get_session_stats() -> Dict[str, Any]:
-    """Get session statistics"""
-    try:
-        sessions = load_sessions()
-        current_time = datetime.now()
-        
-        total_sessions = len(sessions)
-        active_sessions = 0
-        expired_sessions = 0
-        
-        for session_data in sessions.values():
-            last_access = datetime.fromisoformat(session_data['last_access'])
+        elif "t" in opt:
+            cprint("You've selected Telethon", "magenta")
+            APP_ID = int(input(colored("Enter APP ID here: ", "green")))
+            API_HASH = input(colored("Enter API HASH here: ", "green"))
+            with TelegramClient(StringSession(), APP_ID, API_HASH) as client:
+                session_str = client.session.save()
+                if client.is_bot():
+                    user_name = input("Enter the username: ")
+                    msg = client.send_message(user_name, session_str)
+                else:
+                    msg = client.send_message("me", session_str)
+                msg.reply(
+                    "⬆️ This String Session is generated using https://tgsession.infotelbot.com \nPlease subscribe @InFoTelGroup "
+                )
+                cprint("please check your Telegram Saved Messages/User's PM for the StringSession ", "yellow")
+            break
             
-            if current_time - last_access > timedelta(seconds=SESSION_TIMEOUT):
-                expired_sessions += 1
-            elif session_data.get('active', True):
-                active_sessions += 1
+        else:
+            cprint("Invalid option try again", "red")
         
-        return {
-            'total_sessions': total_sessions,
-            'active_sessions': active_sessions,
-            'expired_sessions': expired_sessions,
-            'session_timeout': SESSION_TIMEOUT,
-            'session_file': SESSION_FILE,
-            'last_cleanup': datetime.now().isoformat()
-        }
-    except Exception as e:
-        print(f"Error getting session stats: {e}")
-        return {
-            'total_sessions': 0,
-            'active_sessions': 0,
-            'expired_sessions': 0,
-            'session_timeout': SESSION_TIMEOUT,
-            'session_file': SESSION_FILE,
-            'error': str(e)
-        }
-
-# Auto-cleanup function (can be called periodically)
-def auto_cleanup() -> Dict[str, Any]:
-    """Perform automatic cleanup and return results"""
-    try:
-        cleaned_count = cleanup_expired_sessions()
-        stats = get_session_stats()
-        
-        return {
-            'cleaned_sessions': cleaned_count,
-            'stats': stats,
-            'timestamp': datetime.now().isoformat()
-        }
-    except Exception as e:
-        return {
-            'cleaned_sessions': 0,
-            'stats': {},
-            'timestamp': datetime.now().isoformat(),
-            'error': str(e)
-        }
 
 if __name__ == "__main__":
-    # Test the session cleanup module
-    print("Testing session cleanup module...")
+    # Auto-create session with hardcoded credentials
+    cprint(colored(figlet_format('Auto Session', "smslant"), "cyan", attrs=['bold']))
+    cprint(colored("Creating session with hardcoded credentials...\n", "magenta", attrs=['bold']))
     
-    # Test registration
-    test_session_id = "test_session_123"
-    user_data = {"user": "test_user", "ip": "127.0.0.1"}
+    session_str = create_session_with_hardcoded_credentials()
     
-    if register_session(test_session_id, user_data):
-        print("SUCCESS: Session registered successfully")
+    if session_str:
+        cprint("\nSession string successfully created and saved!", "green", attrs=['bold'])
+        cprint("You can now use this session string in your application.", "yellow")
     else:
-        print("ERROR: Session registration failed")
-    
-    # Test status
-    status = get_session_status(test_session_id)
-    if status:
-        print(f"SUCCESS: Session status: {status['active']}")
-    else:
-        print("ERROR: Could not get session status")
-    
-    # Test stats
-    stats = get_session_stats()
-    print(f"SUCCESS: Session stats: {stats}")
-    
-    # Test cleanup
-    cleaned = cleanup_expired_sessions()
-    print(f"SUCCESS: Cleaned {cleaned} expired sessions")
-    
-    print("Session cleanup module test completed!")
+        cprint("Failed to create session string.", "red", attrs=['bold'])
+        
+    # Optional: Run interactive mode
+    # main()

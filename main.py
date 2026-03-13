@@ -27,7 +27,7 @@ from pocketoptionapi_async.models import OrderDirection, OrderStatus
 API_ID = '34506083'
 API_HASH = '5676893fa1c0fe15eca5dbbceb3ab6a2'
 PHONE_NUMBER = '+12428018500'
-STRING_SESSION = '1AZWarzkBu3VuwqWk96RSig3o6wO73aGKaGF3TkEtOMMXwTQQWNjGX2tU5t3i6eIHbBesaMAQWpU3PfjnXNleOmBIv4QXVvn5LnMNq36dGkLw9dCk7zOvvbuETBtzS4sNdcAISyNQfjg21-p2m31f0C65oTxXlI8ndW6bHmbXaXBm18fIHNOp-6G8AKF7iklIrCWuG8EkMPs-BfSLMrmzuoGbuh8ymqecpuM1TW2nhz1BHQpswQDX3BwTA1f_IkbWoGn0ePSml8_Zz5xJmNiiShbaWRjuRnACiHt7u6zFIAjHRpS1ds3jRv7GgUjIJlUERRA2gWKrl9hxuATvY03ah0kmP8zcWLI='  # Working session from po_vip_testing_1773343014.session
+STRING_SESSION = '1AZWarzkBuyPe9BnmmNJBJyG0R4fb9EItkxpNvjV6sNBiMjN-gK1hkjz9XpBkxFV92uT_Yxj2I_ZKFzJ0d8GWj9DkicZXiFSSqips6XmXzzVscklLd2pZb4k6ctz6LTE6z8b_uUgRpEZzectHQpSEq5BreaiSin9OYbpBAiHm1CGlf8KUWZVVz7nzlnlzPq54u7pQY44Q8I6DGiFJN9_ay3K883tv1xB9SZ1jJsB_BYeovtN2tqchrWTfyc4pX5rT7nlK3js3ZhQRNhuNXQXBHWFubLIKYaelQq7pONm4ZUyMCnxYNP6a_CaEG1ByCf36OunherYkP5KNoydmTNds3lD6-1h1hGQ='
 
 # Hardcoded SSIDs
 SSID_DEMO = '42["auth",{"session":"8kmju1f41cibg1vg5pihe37d7u","isDemo":1,"uid":116040367,"platform":2,"isFastHistory":true,"isOptimized":true}]'
@@ -143,7 +143,13 @@ def log_message(message: str):
         # Create directories in Railway storage
         log_dirs = ['/tmp/logs/telegram', 'telegram/logs']
         for log_dir in log_dirs:
-            Path(log_dir).mkdir(parents=True, exist_ok=True)
+            try:
+                Path(log_dir).mkdir(parents=True, exist_ok=True)
+            except FileExistsError:
+                # Directory already exists, that's fine
+                pass
+            except Exception as dir_error:
+                print(f"Directory creation error for {log_dir}: {dir_error}")
         
         # Log to both local and Railway storage
         log_files = ['telegram/trading_log.txt', '/tmp/logs/telegram/trading_log.txt']

@@ -1,2 +1,3 @@
 timestamp,asset,direction,amount,duration,result,profit,balance
 2026-03-13T16:01:07.573397,EURAUD,SELL,5.0,1,win,,
+2026-03-13T18:35:44.031344,EURUSD,BUY,5.0,2,win,8.5,1008.5
