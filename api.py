@@ -163,57 +163,90 @@ def update_bot_status_from_logs():
     """Update bot status by reading recent logs"""
     try:
         # Read recent logs to determine actual status
-        if os.path.exists('/tmp/logs/telegram/trading_log.txt'):
-            with open('/tmp/logs/telegram/trading_log.txt', 'r') as f:
-                lines = f.readlines()
-                recent_lines = lines[-20:]  # Last 20 lines
-                
-                # Check for connection status
-                telegram_connected = any('Telegram session authorized successfully' in line for line in recent_lines)
-                pocketoption_connected = any('Connected to PocketOption!' in line for line in recent_lines)
-                bot_ready = any('Ready to monitor trading signals' in line for line in recent_lines)
-                
-                # Update status if bot is actually running
-                if telegram_connected and pocketoption_connected and bot_ready:
-                    bot_status['telegram_connected'] = True
-                    bot_status['pocketoption_connected'] = True
-                    bot_status['running'] = True
+        log_files = ['/tmp/logs/telegram/trading_log.txt', 'telegram/trading_log.txt']
+        
+        for log_file in log_files:
+            if os.path.exists(log_file):
+                with open(log_file, 'r') as f:
+                    lines = f.readlines()
+                    recent_lines = lines[-50:]  # Last 50 lines for better balance tracking
                     
-                    # Try to get balance
-                    for line in recent_lines:
-                        if 'Balance:' in line and 'USD' in line:
-                            try:
-                                balance_str = line.split('Balance: $')[1].split(' ')[0]
-                                bot_status['current_balance'] = float(balance_str)
-                                break
-                            except:
-                                pass
+                    # Check for connection status
+                    telegram_connected = any('Telegram session authorized successfully' in line for line in recent_lines)
+                    pocketoption_connected = any('Connected to PocketOption!' in line for line in recent_lines)
+                    bot_ready = any('Ready to monitor trading signals' in line for line in recent_lines)
+                    
+                    # Update status if bot is actually running
+                    if telegram_connected and pocketoption_connected and bot_ready:
+                        bot_status['telegram_connected'] = True
+                        bot_status['pocketoption_connected'] = True
+                        bot_status['running'] = True
+                        
+                        # Enhanced balance extraction with multiple patterns
+                        balance_patterns = [
+                            'Balance: $',
+                            'Balance updated: $',
+                            'balance: $',
+                            'Balance: $49101.57 USD',
+                            'Balance: $49096.57 USD'
+                        ]
+                        
+                        for line in recent_lines:
+                            for pattern in balance_patterns:
+                                if pattern in line:
+                                    try:
+                                        # Extract balance with better parsing
+                                        if 'USD' in line:
+                                            # Pattern: "Balance: $49101.57 USD"
+                                            balance_part = line.split('$')[1].split(' ')[0]
+                                            if balance_part.replace('.', '').isdigit():
+                                                bot_status['current_balance'] = float(balance_part)
+                                                logger.info(f"Updated balance from logs: ${bot_status['current_balance']}")
+                                                return
+                                        elif 'updated:' in line.lower():
+                                            # Pattern: "Balance updated: $49096.57"
+                                            balance_part = line.split('$')[1].split(' ')[0]
+                                            if balance_part.replace('.', '').isdigit():
+                                                bot_status['current_balance'] = float(balance_part)
+                                                logger.info(f"Updated balance from logs: ${bot_status['current_balance']}")
+                                                return
+                                    except Exception as e:
+                                        logger.debug(f"Balance parsing error: {e}")
+                                        continue
                                 
-        elif os.path.exists('telegram/trading_log.txt'):
-            with open('telegram/trading_log.txt', 'r') as f:
-                lines = f.readlines()
-                recent_lines = lines[-20:]  # Last 20 lines
+        # If no balance found in logs, try to get from PocketOption directly
+        if bot_status.get('pocketoption_connected') and bot_status.get('current_balance', 0) == 0:
+            try:
+                # Import main to get persistent client
+                import sys
+                sys.path.append('.')
+                from main import get_persistent_client
                 
-                # Check for connection status
-                telegram_connected = any('Telegram session authorized successfully' in line for line in recent_lines)
-                pocketoption_connected = any('Connected to PocketOption!' in line for line in recent_lines)
-                bot_ready = any('Ready to monitor trading signals' in line for line in recent_lines)
+                # Try to get fresh balance
+                import asyncio
+                async def get_fresh_balance():
+                    try:
+                        client = await get_persistent_client()
+                        if client and hasattr(client, 'get_balance'):
+                            balance_result = await client.get_balance()
+                            if balance_result and hasattr(balance_result, 'balance'):
+                                fresh_balance = float(balance_result.balance)
+                                bot_status['current_balance'] = fresh_balance
+                                logger.info(f"Updated balance from API: ${fresh_balance}")
+                                return fresh_balance
+                    except Exception as e:
+                        logger.error(f"Fresh balance error: {e}")
+                        return None
                 
-                # Update status if bot is actually running
-                if telegram_connected and pocketoption_connected and bot_ready:
-                    bot_status['telegram_connected'] = True
-                    bot_status['pocketoption_connected'] = True
-                    bot_status['running'] = True
+                # Run the async function
+                loop = asyncio.new_event_loop()
+                fresh_balance = loop.run_until_complete(get_fresh_balance())
+                
+                if fresh_balance:
+                    bot_status['current_balance'] = fresh_balance
                     
-                    # Try to get balance
-                    for line in recent_lines:
-                        if 'Balance:' in line and 'USD' in line:
-                            try:
-                                balance_str = line.split('Balance: $')[1].split(' ')[0]
-                                bot_status['current_balance'] = float(balance_str)
-                                break
-                            except:
-                                pass
+            except Exception as e:
+                logger.error(f"Balance update error: {e}")
                                 
     except Exception as e:
         logger.error(f"Status update error: {e}")
@@ -332,18 +365,57 @@ def get_trades():
 def get_balance():
     """Get current balance"""
     try:
-        from main import get_persistent_client
-        client = get_persistent_client()
+        # Force balance update first
+        update_bot_status_from_logs()
         
-        if client:
-            balance = client.get_balance()
-            return jsonify({
-                'balance': balance,
-                'currency': 'USD',
-                'timestamp': datetime.now().isoformat()
-            })
+        # Try to get fresh balance from PocketOption
+        if bot_status.get('pocketoption_connected'):
+            try:
+                import sys
+                sys.path.append('.')
+                from main import get_persistent_client
+                import asyncio
+                
+                async def get_fresh_balance():
+                    try:
+                        client = await get_persistent_client()
+                        if client and hasattr(client, 'get_balance'):
+                            balance_result = await client.get_balance()
+                            if balance_result and hasattr(balance_result, 'balance'):
+                                fresh_balance = float(balance_result.balance)
+                                bot_status['current_balance'] = fresh_balance
+                                logger.info(f"Fresh balance from API: ${fresh_balance}")
+                                return {
+                                    'balance': fresh_balance,
+                                    'currency': 'USD',
+                                    'timestamp': datetime.now().isoformat(),
+                                    'source': 'live_api'
+                                }
+                    except Exception as e:
+                        logger.error(f"Fresh balance error: {e}")
+                        return None
+                
+                # Run the async function
+                loop = asyncio.new_event_loop()
+                fresh_balance_data = loop.run_until_complete(get_fresh_balance())
+                
+                if fresh_balance_data:
+                    return jsonify(fresh_balance_data)
+                else:
+                    # Fallback to cached balance
+                    return jsonify({
+                        'balance': bot_status.get('current_balance', 0.0),
+                        'currency': 'USD',
+                        'timestamp': datetime.now().isoformat(),
+                        'source': 'cached'
+                    })
+            except Exception as e:
+                logger.error(f"Balance endpoint error: {e}")
+                return jsonify({'error': str(e)}), 500
         else:
-            return jsonify({'error': 'PocketOption not connected'}), 500
+            return jsonify({
+                'error': 'PocketOption not connected'
+            }), 500
             
     except Exception as e:
         return jsonify({'error': str(e)}), 500

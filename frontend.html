@@ -279,6 +279,9 @@
                 updateTrades(),
                 updateLogs()
             ]);
+            
+            // Refresh balance more frequently
+            refreshBalance();
         }
 
         // Update bot status
@@ -421,7 +424,41 @@
         function startAutoRefresh() {
             refreshInterval = setInterval(() => {
                 refreshData();
-            }, 5000); // Refresh every 5 seconds
+            }, 3000); // Refresh every 3 seconds for real-time balance
+        }
+        
+        // Separate balance refresh for more frequent updates
+        function refreshBalance() {
+            fetch('/balance')
+                .then(response => response.json())
+                .then(data => {
+                    if (data.balance) {
+                        document.getElementById('balance').textContent = `$${data.balance.toFixed(2)}`;
+                        
+                        // Update balance chart
+                        updateBalanceChart(data.balance);
+                    }
+                })
+                .catch(error => {
+                    console.error('Balance refresh error:', error);
+                });
+        }
+        
+        // Update balance chart
+        function updateBalanceChart(newBalance) {
+            if (performanceChart && newBalance) {
+                const now = new Date().toLocaleTimeString();
+                performanceChart.data.labels.push(now);
+                performanceChart.data.datasets[0].data.push(newBalance);
+                
+                // Keep only last 20 points
+                if (performanceChart.data.labels.length > 20) {
+                    performanceChart.data.labels = performanceChart.data.labels.slice(-20);
+                    performanceChart.data.datasets[0].data = performanceChart.data.datasets[0].data.slice(-20);
+                }
+                
+                performanceChart.update('none');
+            }
         }
 
         // Clean up on page unload
