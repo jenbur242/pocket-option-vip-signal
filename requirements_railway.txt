@@ -1,0 +1,25 @@
+# Core dependencies for Railway deployment
+asyncio
+aiohttp
+aiofiles
+python-dotenv
+telethon
+pyrogram
+tgcrypto
+requests
+websockets
+
+# Additional dependencies
+pathlib
+csv
+datetime
+re
+sys
+os
+time
+
+# For Railway compatibility
+gunicorn
+flask
+fastapi
+uvicorn

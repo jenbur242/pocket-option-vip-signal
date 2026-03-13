@@ -13,6 +13,20 @@ from telethon import events
 from datetime import datetime, timedelta
 from typing import Dict
 
+# Railway deployment fixes
+try:
+    # Set up environment for Railway
+    os.environ.setdefault('PYTHONIOENCODING', 'utf-8')
+    os.environ.setdefault('PYTHONUNBUFFERED', '1')
+    
+    # Create necessary directories for Railway
+    railway_dirs = ['/tmp/logs', '/tmp/csv', 'telegram/logs', 'telegram/trades']
+    for dir_path in railway_dirs:
+        Path(dir_path).mkdir(parents=True, exist_ok=True)
+        
+except Exception as e:
+    print(f"Setup warning: {e}")
+
 # Load environment variables
 load_dotenv()
 
@@ -20,8 +34,12 @@ load_dotenv()
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 # Import PocketOption API
-from pocketoptionapi_async import AsyncPocketOptionClient
-from pocketoptionapi_async.models import OrderDirection, OrderStatus
+try:
+    from pocketoptionapi_async import AsyncPocketOptionClient
+    from pocketoptionapi_async.models import OrderDirection, OrderStatus
+except ImportError as e:
+    print(f"PocketOption API import error: {e}")
+    sys.exit(1)
 
 # Hardcoded credentials (directly in Python file)
 API_ID = '34506083'
@@ -659,7 +677,7 @@ async def main():
         if not await client.is_user_authorized():
             log_message("String session invalid - attempting to use existing session...")
             # Don't create new session - just continue with existing one
-            log_message("⚠️  Using existing session despite authorization issues")
+            log_message("[WARNING] Using existing session despite authorization issues")
         else:
             log_message("Telegram session authorized successfully")
             log_message("Ready to monitor trading signals")
