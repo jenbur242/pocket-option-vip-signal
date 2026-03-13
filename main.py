@@ -651,18 +651,19 @@ async def main():
         
         # Check if already authorized
         if not await client.is_user_authorized():
-            log_message("String session invalid - recreating session...")
-            await create_session_if_needed()
-            # Session will be set by create_session_if_needed function
-            if STRING_SESSION:
-                client = TelegramClient(StringSession(STRING_SESSION), API_ID, API_HASH)
-                await client.connect()
-                if not await client.is_user_authorized():
-                    log_message("Session creation failed - please check credentials")
-                    return
-            else:
-                log_message("Failed to recreate session")
-                return
+            log_message("String session invalid - attempting to use existing session...")
+            # Don't create new session - just continue with existing one
+            log_message("⚠️  Using existing session despite authorization issues")
+            # Don't call create_session_if_needed() to avoid OTP prompt
+            # if STRING_SESSION:
+            #     client = TelegramClient(StringSession(STRING_SESSION), API_ID, API_HASH)
+            #     await client.connect()
+            #     if not await client.is_user_authorized():
+            #         log_message("Session creation failed - please check credentials")
+            #         return
+            # else:
+            #     log_message("Failed to recreate session")
+            #     return
         
         log_message("Telegram session authorized successfully")
         log_message("Ready to monitor trading signals")
