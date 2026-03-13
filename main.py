@@ -455,9 +455,9 @@ def parse_signal(message_text: str) -> Dict:
             signal['duration'] = int(time_match.group(1))
             break
     
-    # Default to 2 minutes if no time found
+    # Default to 1 minute if no time found
     if signal['duration'] is None:
-        signal['duration'] = 2
+        signal['duration'] = 1
     
     # Multiple direction patterns (try in order of specificity)
     direction_patterns = [
@@ -609,6 +609,7 @@ async def main():
     # Show configuration from .env
     trade_amount_parsed = get_trade_amount()
     log_message(f"Trade Amount: ${trade_amount_parsed} (from .env)")
+    log_message(f"Default Duration: 1 minute (if not specified in signal)")
     log_message(f"Initial Amount: ${trade_amount_parsed}")
     
     log_message(f"Multiplier: {get_multiplier()}x (from .env)")
