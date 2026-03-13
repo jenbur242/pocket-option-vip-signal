@@ -168,7 +168,11 @@
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 <div class="border rounded-lg p-3">
                     <code class="text-sm font-mono text-blue-600">GET /</code>
-                    <p class="text-xs text-gray-600 mt-1">Root endpoint - API info</p>
+                    <p class="text-xs text-gray-600 mt-1">Dashboard HTML page</p>
+                </div>
+                <div class="border rounded-lg p-3">
+                    <code class="text-sm font-mono text-blue-600">GET /api</code>
+                    <p class="text-xs text-gray-600 mt-1">API info endpoint</p>
                 </div>
                 <div class="border rounded-lg p-3">
                     <code class="text-sm font-mono text-blue-600">GET /health</code>
@@ -185,10 +189,6 @@
                 <div class="border rounded-lg p-3">
                     <code class="text-sm font-mono text-blue-600">GET /stop</code>
                     <p class="text-xs text-gray-600 mt-1">Stop trading bot</p>
-                </div>
-                <div class="border rounded-lg p-3">
-                    <code class="text-sm font-mono text-blue-600">GET /docs</code>
-                    <p class="text-xs text-gray-600 mt-1">OpenAPI documentation</p>
                 </div>
             </div>
         </div>
@@ -273,10 +273,10 @@
 
         // Dashboard functions
         async function loadRoot() {
-            const result = await apiCall('/');
+            const result = await apiCall('/api');
             if (result.success) {
                 const data = result.data;
-                log(`Root endpoint loaded: ${data.message}`, 'success');
+                log(`API endpoint loaded: ${data.message}`, 'success');
                 
                 // Update header with API info
                 document.querySelector('header h1').innerHTML = `

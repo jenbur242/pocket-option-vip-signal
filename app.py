@@ -1,7 +1,7 @@
 import os
 import asyncio
 from fastapi import FastAPI
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, FileResponse
 import uvicorn
 from datetime import datetime
 
@@ -12,6 +12,22 @@ bot_task = None
 
 @app.get("/")
 async def root():
+    """Serve dashboard HTML or return API info"""
+    dashboard_path = "dashboard.html"
+    if os.path.exists(dashboard_path):
+        return FileResponse(dashboard_path, media_type="text/html")
+    
+    # Fallback to JSON if dashboard doesn't exist
+    return {
+        "status": "running", 
+        "message": "Pocket Option Trading Bot on Railway",
+        "timestamp": datetime.now().isoformat(),
+        "environment": "railway"
+    }
+
+@app.get("/api")
+async def api_info():
+    """API info endpoint"""
     return {
         "status": "running", 
         "message": "Pocket Option Trading Bot on Railway",
