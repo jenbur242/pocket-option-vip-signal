@@ -249,11 +249,27 @@
             }
         }
 
+        // Function to handle non-JSON responses
+        function handleNonJSONResponse(response, endpoint) {
+            log(`✗ ${endpoint} - Non-JSON response received`, 'error');
+            log(`Response text: ${response.substring(0, 200)}...`, 'error');
+            updateConnectionStatus('offline');
+            return { success: false, error: 'Non-JSON response received' };
+        }
+
         // API functions
         async function apiCall(endpoint, method = 'GET') {
             try {
                 log(`Calling ${method} ${endpoint}`);
                 const response = await fetch(`${API_BASE}${endpoint}`);
+                
+                // Check if response is JSON
+                const contentType = response.headers.get('content-type');
+                if (!contentType || !contentType.includes('application/json')) {
+                    const text = await response.text();
+                    return handleNonJSONResponse(text, endpoint);
+                }
+                
                 const data = await response.json();
                 
                 if (response.ok) {
@@ -265,6 +281,11 @@
                     return { success: false, error: data, status: response.status };
                 }
             } catch (error) {
+                if (error instanceof SyntaxError && error.message.includes('JSON')) {
+                    log(`✗ ${endpoint} - Invalid JSON response`, 'error');
+                    updateConnectionStatus('offline');
+                    return { success: false, error: 'Invalid JSON response' };
+                }
                 log(`✗ ${endpoint} - Network error: ${error.message}`, 'error');
                 updateConnectionStatus('offline');
                 return { success: false, error: error.message };
