@@ -3,811 +3,225 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Pocket Option Trading Bot</title>
+    <title>Pocket Option Trading Bot - Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            min-height: 100vh;
-            color: #333;
-        }
-
-        .container {
-            max-width: 800px;
-            margin: 0 auto;
-            padding: 20px;
-        }
-
-        .header {
-            text-align: center;
-            color: white;
-            margin-bottom: 30px;
-        }
-
-        .header h1 {
-            font-size: 2.5rem;
-            margin-bottom: 10px;
-            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
-        }
-
-        .card {
-            background: white;
-            border-radius: 15px;
-            padding: 25px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
-            margin-bottom: 20px;
-        }
-
-        .card h3 {
-            color: #667eea;
-            margin-bottom: 15px;
-            font-size: 1.3rem;
-            border-bottom: 2px solid #f0f0f0;
-            padding-bottom: 10px;
-        }
-
-        .status-indicator {
-            display: inline-block;
-            width: 12px;
-            height: 12px;
-            border-radius: 50%;
-            margin-right: 8px;
-        }
-
-        .status-online {
-            background-color: #4CAF50;
-            animation: pulse 2s infinite;
-        }
-
-        .status-offline {
-            background-color: #f44336;
-        }
-
-        .status-warning {
-            background-color: #ff9800;
-        }
-
         @keyframes pulse {
-            0% { opacity: 1; }
+            0%, 100% { opacity: 1; }
             50% { opacity: 0.5; }
-            100% { opacity: 1; }
         }
-
-        .form-group {
-            margin-bottom: 15px;
-        }
-
-        .form-group label {
-            display: block;
-            margin-bottom: 5px;
-            font-weight: 600;
-            color: #555;
-        }
-
-        .form-group input {
-            width: 100%;
-            padding: 10px;
-            border: 2px solid #e0e0e0;
-            border-radius: 8px;
-            font-size: 14px;
-            transition: border-color 0.3s ease;
-        }
-
-        .form-group input:focus {
-            outline: none;
-            border-color: #667eea;
-        }
-
-        .btn {
+        .pulse { animation: pulse 2s infinite; }
+        .gradient-bg {
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            border: none;
-            padding: 12px 24px;
-            border-radius: 8px;
-            cursor: pointer;
-            font-size: 14px;
-            font-weight: 600;
-            transition: all 0.3s ease;
-            margin-right: 10px;
-            margin-bottom: 10px;
         }
-
-        .btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        .glass-effect {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
         }
-
-        .btn:disabled {
-            background: #ccc;
-            cursor: not-allowed;
-            transform: none;
-            box-shadow: none;
-        }
-
-        .btn-success {
-            background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
-        }
-
-        .alert {
-            padding: 15px;
-            border-radius: 8px;
-            margin-bottom: 15px;
-            border-left: 4px solid;
-        }
-
-        .alert-success {
-            background-color: #d4edda;
-            border-color: #28a745;
-            color: #155724;
-        }
-
-        .alert-error {
-            background-color: #f8d7da;
-            border-color: #dc3545;
-            color: #721c24;
-        }
-
-        .alert-warning {
-            background-color: #fff3cd;
-            border-color: #ffc107;
-            color: #856404;
-        }
-
-        .alert-info {
-            background-color: #d1ecf1;
-            border-color: #17a2b8;
-            color: #0c5460;
-        }
-
-        .stats-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 15px;
-            margin-bottom: 20px;
-        }
-
-        .config-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-            gap: 20px;
-            margin-bottom: 20px;
-        }
-
-        .config-item {
-            display: flex;
-            flex-direction: column;
-            gap: 8px;
-        }
-
-        .config-item label {
-            font-weight: 600;
-            color: #495057;
-            font-size: 0.9rem;
-        }
-
-        .config-input, .config-select {
-            padding: 10px;
-            border: 2px solid #dee2e6;
-            border-radius: 6px;
-            font-size: 1rem;
-            transition: border-color 0.3s ease;
-        }
-
-        .config-input:focus, .config-select:focus {
-            outline: none;
-            border-color: #007bff;
-            box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.1);
-        }
-
-        .config-buttons {
-            display: flex;
-            gap: 10px;
-            flex-wrap: wrap;
-            margin-bottom: 15px;
-        }
-
-        .config-status {
-            padding: 10px;
-            border-radius: 6px;
-            font-size: 0.9rem;
-            min-height: 40px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-
-        .stat-item {
-            text-align: center;
-            padding: 20px;
-            background: #f8f9fa;
-            border-radius: 8px;
-            border-left: 4px solid #667eea;
-        }
-
-        .stat-value {
-            font-size: 2rem;
-            font-weight: bold;
-            color: #667eea;
-        }
-
-        .stat-label {
-            font-size: 0.9rem;
-            color: #666;
-            margin-top: 5px;
-        }
-
-        .loading {
-            display: inline-block;
-            width: 20px;
-            height: 20px;
-            border: 3px solid #f3f3f3;
-            border-top: 3px solid #667eea;
-            border-radius: 50%;
-            animation: spin 1s linear infinite;
-        }
-
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
-
-        .hidden {
-            display: none;
-        }
-
-        .session-info {
-            background: #e8f5e8;
-            padding: 15px;
-            border-radius: 8px;
-            margin-bottom: 15px;
-            border-left: 4px solid #4CAF50;
-        }
-
-        .session-expired {
-            background: #ffebee;
-            border-left-color: #f44336;
-        }
+        .trade-win { background: linear-gradient(135deg, #10b981 0%, #059669 100%); }
+        .trade-loss { background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%); }
+        .trade-pending { background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); }
     </style>
 </head>
-<body>
-    <div class="container">
-        <div class="header">
-            <h1>🤖 Pocket Option Trading Bot</h1>
-            <p>Simple Trading Dashboard</p>
-        </div>
-
-        <div id="alerts"></div>
-
-        <!-- Mode Switch Card -->
-        <div class="card">
-            <h3>🔄 Data Mode</h3>
-            <div class="stats-grid">
-                <div class="stat-item">
-                    <div class="stat-value" id="current-mode">Real</div>
-                    <div class="stat-label">Current Mode</div>
+<body class="bg-gray-900 text-white min-h-screen">
+    <!-- Header -->
+    <header class="gradient-bg shadow-lg">
+        <div class="container mx-auto px-4 py-6">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center space-x-3">
+                    <i data-lucide="trending-up" class="w-8 h-8"></i>
+                    <h1 class="text-2xl font-bold">Pocket Option Trading Bot</h1>
                 </div>
-                <div class="stat-item">
-                    <div class="stat-value" id="mode-indicator">🟢</div>
-                    <div class="stat-label">Status</div>
+                <div class="flex items-center space-x-4">
+                    <span id="connection-status" class="flex items-center space-x-2">
+                        <span class="w-3 h-3 bg-red-500 rounded-full pulse"></span>
+                        <span class="text-sm">Disconnected</span>
+                    </span>
+                    <button onclick="refreshData()" class="bg-white/20 hover:bg-white/30 px-4 py-2 rounded-lg transition">
+                        <i data-lucide="refresh-cw" class="w-4 h-4"></i>
+                    </button>
                 </div>
-            </div>
-            <div style="margin-top: 15px;">
-                <button class="btn" id="btn-real-mode" onclick="setDataMode('real')">📊 Real Data</button>
-                <button class="btn" id="btn-dummy-mode" onclick="setDataMode('dummy')">🎭 Dummy Data</button>
-                <button class="btn" onclick="clearCache()">🗑️ Clear Cache</button>
-                <button class="btn" onclick="clearAllSessions()">🧹 Clear Session</button>
-                <button class="btn" onclick="testSessionStorage()">🧪 Test Storage</button>
-                <button class="btn" onclick="showStorageStatus()">📊 Storage Status</button>
-            </div>
-            <div id="mode-info" style="margin-top: 15px; font-size: 0.9rem; color: #666;">
-                <strong>Real Mode:</strong> Fetches live data from PocketOption<br>
-                <strong>Dummy Mode:</strong> Uses simulated data for testing
             </div>
         </div>
+    </header>
 
-        <!-- Balance Card -->
-        <div class="card">
-            <h3>💰 Account Balance</h3>
-            <div class="stats-grid">
-                <div class="stat-item">
-                    <div class="stat-value" id="demo-balance">$0.00</div>
-                    <div class="stat-label">Demo Account</div>
+    <!-- Main Content -->
+    <main class="container mx-auto px-4 py-8">
+        <!-- Status Cards -->
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+            <!-- Bot Status -->
+            <div class="glass-effect rounded-xl p-6">
+                <div class="flex items-center justify-between mb-4">
+                    <i data-lucide="bot" class="w-8 h-8 text-blue-400"></i>
+                    <span id="bot-status" class="px-3 py-1 rounded-full text-xs font-medium bg-gray-700">OFFLINE</span>
                 </div>
-                <div class="stat-item">
-                    <div class="stat-value" id="real-balance">$0.00</div>
-                    <div class="stat-label">Real Account</div>
-                </div>
+                <h3 class="text-lg font-semibold mb-2">Bot Status</h3>
+                <p id="bot-status-text" class="text-gray-400 text-sm">Bot is not running</p>
             </div>
-            <button class="btn" onclick="fetchBalance()">🔄 Refresh Balance</button>
-        </div>
 
-        <!-- Trading Configuration Card -->
-        <div class="card">
-            <h3>⚙️ Trading Configuration</h3>
-            <div class="config-grid">
-                <div class="config-item">
-                    <label for="trade-amount">Initial Trade Amount ($)</label>
-                    <input type="number" id="trade-amount" min="1" step="0.1" value="5.0" class="config-input">
+            <!-- Balance -->
+            <div class="glass-effect rounded-xl p-6">
+                <div class="flex items-center justify-between mb-4">
+                    <i data-lucide="wallet" class="w-8 h-8 text-green-400"></i>
+                    <span class="text-xs text-gray-400">USD</span>
                 </div>
-                <div class="config-item">
-                    <label for="multiplier">Martingale Multiplier</label>
-                    <input type="number" id="multiplier" min="1" step="0.1" value="2.5" class="config-input">
-                </div>
-                <div class="config-item">
-                    <label for="initial-balance">Initial Balance ($)</label>
-                    <input type="number" id="initial-balance" min="100" step="100" value="10000" class="config-input">
-                </div>
-                <div class="config-item">
-                    <label for="account-mode">Account Mode</label>
-                    <select id="account-mode" class="config-select">
-                        <option value="true">Demo Account</option>
-                        <option value="false">Real Account</option>
-                    </select>
-                </div>
+                <h3 class="text-lg font-semibold mb-2">Balance</h3>
+                <p id="balance" class="text-2xl font-bold">$0.00</p>
             </div>
-            <div class="config-buttons">
-                <button class="btn" onclick="updateTradingConfig()">💾 Save Config</button>
-                <button class="btn" onclick="resetTradingConfig()">🔄 Reset to Defaults</button>
-                <button class="btn" onclick="loadTradingConfig()">🔄 Load Current</button>
-            </div>
-            <div id="config-status" class="config-status"></div>
-        </div>
 
-        <!-- Session Status Card -->
-        <div class="card">
-            <h3>📱 Telegram Session</h3>
-            <div id="session-status" class="session-info">
-                <div class="loading"></div> Checking session...
+            <!-- Total Trades -->
+            <div class="glass-effect rounded-xl p-6">
+                <div class="flex items-center justify-between mb-4">
+                    <i data-lucide="bar-chart-2" class="w-8 h-8 text-purple-400"></i>
+                    <span id="win-rate" class="text-xs text-gray-400">0%</span>
+                </div>
+                <h3 class="text-lg font-semibold mb-2">Total Trades</h3>
+                <p id="total-trades" class="text-2xl font-bold">0</p>
             </div>
-            
-            <!-- OTP Section (Hidden by default) -->
-            <div id="otp-section" class="hidden">
-                <div class="alert alert-warning">
-                    <strong>⚠️ Session Expired</strong><br>
-                    Please enter OTP code to create new session
+
+            <!-- Last Signal -->
+            <div class="glass-effect rounded-xl p-6">
+                <div class="flex items-center justify-between mb-4">
+                    <i data-lucide="radio" class="w-8 h-8 text-yellow-400"></i>
+                    <span class="text-xs text-gray-400">Live</span>
                 </div>
-                <div class="form-group">
-                    <label for="otp-code">OTP Code:</label>
-                    <input type="text" id="otp-code" placeholder="Enter OTP from Telegram" maxlength="10">
-                </div>
-                <button class="btn btn-success" onclick="sendOTP()">📲 Send OTP</button>
-                <button class="btn btn-success" onclick="verifyOTP()">✅ Verify OTP</button>
+                <h3 class="text-lg font-semibold mb-2">Last Signal</h3>
+                <p id="last-signal" class="text-sm text-gray-400">No signal yet</p>
             </div>
         </div>
 
-        <!-- Bot Status Card -->
-        <div class="card">
-            <h3>📊 Bot Status</h3>
-            <div class="stats-grid">
-                <div class="stat-item">
-                    <div class="stat-value" id="bot-status">🔄</div>
-                    <div class="stat-label">Trading Bot</div>
-                </div>
-                <div class="stat-item">
-                    <div class="stat-value" id="total-trades">0</div>
-                    <div class="stat-label">Total Trades</div>
-                </div>
-                <div class="stat-item">
-                    <div class="stat-value" id="current-step">0</div>
-                    <div class="stat-label">Martingale Step</div>
-                </div>
-                <div class="stat-item">
-                    <div class="stat-value" id="current-amount">$0.00</div>
-                    <div class="stat-label">Current Amount</div>
+        <!-- Control Panel -->
+        <div class="glass-effect rounded-xl p-6 mb-8">
+            <h2 class="text-xl font-bold mb-6 flex items-center">
+                <i data-lucide="settings" class="w-6 h-6 mr-2"></i>
+                Bot Control
+            </h2>
+            <div class="flex flex-wrap gap-4">
+                <button id="start-btn" onclick="startBot()" class="bg-green-600 hover:bg-green-700 px-6 py-3 rounded-lg font-medium transition flex items-center">
+                    <i data-lucide="play" class="w-4 h-4 mr-2"></i>
+                    Start Bot
+                </button>
+                <button id="stop-btn" onclick="stopBot()" class="bg-red-600 hover:bg-red-700 px-6 py-3 rounded-lg font-medium transition flex items-center" disabled>
+                    <i data-lucide="square" class="w-4 h-4 mr-2"></i>
+                    Stop Bot
+                </button>
+                <button onclick="createBackup()" class="bg-blue-600 hover:bg-blue-700 px-6 py-3 rounded-lg font-medium transition flex items-center">
+                    <i data-lucide="download" class="w-4 h-4 mr-2"></i>
+                    Create Backup
+                </button>
+                <button onclick="refreshData()" class="bg-gray-600 hover:bg-gray-700 px-6 py-3 rounded-lg font-medium transition flex items-center">
+                    <i data-lucide="refresh-cw" class="w-4 h-4 mr-2"></i>
+                    Refresh
+                </button>
+            </div>
+        </div>
+
+        <!-- Trading Activity -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+            <!-- Recent Trades -->
+            <div class="glass-effect rounded-xl p-6">
+                <h2 class="text-xl font-bold mb-6 flex items-center">
+                    <i data-lucide="history" class="w-6 h-6 mr-2"></i>
+                    Recent Trades
+                </h2>
+                <div id="trades-container" class="space-y-3 max-h-96 overflow-y-auto">
+                    <p class="text-gray-400 text-center py-8">No trades yet</p>
                 </div>
             </div>
-            <button class="btn" onclick="refreshStatus()">🔄 Refresh Status</button>
+
+            <!-- Live Log -->
+            <div class="glass-effect rounded-xl p-6">
+                <h2 class="text-xl font-bold mb-6 flex items-center">
+                    <i data-lucide="terminal" class="w-6 h-6 mr-2"></i>
+                    Live Log
+                </h2>
+                <div id="logs-container" class="bg-black/50 rounded-lg p-4 font-mono text-sm max-h-96 overflow-y-auto">
+                    <p class="text-gray-400">Waiting for logs...</p>
+                </div>
+            </div>
         </div>
-    </div>
+
+        <!-- Performance Chart -->
+        <div class="glass-effect rounded-xl p-6">
+            <h2 class="text-xl font-bold mb-6 flex items-center">
+                <i data-lucide="line-chart" class="w-6 h-6 mr-2"></i>
+                Trading Performance
+            </h2>
+            <div class="h-64">
+                <canvas id="performance-chart"></canvas>
+            </div>
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-gray-800 mt-12 py-6">
+        <div class="container mx-auto px-4 text-center text-gray-400">
+            <p>Pocket Option Trading Bot © 2024 | Real-time Automated Trading</p>
+        </div>
+    </footer>
 
     <script>
-        // API Base URL - Auto-detect environment
-        const API_BASE = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' 
-            ? '' 
-            : '';
+        // Initialize Lucide icons
+        lucide.createIcons();
 
-        // Enhanced Session Storage System for Railway Deployment
-        class SessionManager {
-            constructor() {
-                this.sessionPrefix = 'pocket_option_';
-                this.isLocalStorageAvailable = this.checkLocalStorage();
-                this.fallbackStorage = {};
-            }
+        // Global variables
+        let performanceChart = null;
+        let refreshInterval = null;
 
-            checkLocalStorage() {
-                try {
-                    const test = '__storage_test__';
-                    localStorage.setItem(test, test);
-                    localStorage.removeItem(test);
-                    return true;
-                } catch (e) {
-                    console.warn('localStorage not available, using fallback storage');
-                    return false;
-                }
-            }
+        // API base URL
+        const API_BASE = window.location.origin;
 
-            set(key, data) {
-                const item = {
-                    data: data,
-                    timestamp: Date.now(),
-                    sessionId: this.getSessionId()
-                };
+        // Initialize on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            initializeChart();
+            refreshData();
+            startAutoRefresh();
+        });
 
-                try {
-                    if (this.isLocalStorageAvailable) {
-                        localStorage.setItem(this.sessionPrefix + key, JSON.stringify(item));
-                    } else {
-                        // Fallback for Railway/some browsers
-                        this.fallbackStorage[key] = item;
-                        // Also try sessionStorage as backup
-                        try {
-                            sessionStorage.setItem(this.sessionPrefix + key, JSON.stringify(item));
-                        } catch (e) {
-                            console.warn('sessionStorage also not available');
+        // Initialize performance chart
+        function initializeChart() {
+            const ctx = document.getElementById('performance-chart').getContext('2d');
+            performanceChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: [],
+                    datasets: [{
+                        label: 'Balance',
+                        data: [],
+                        borderColor: 'rgb(59, 130, 246)',
+                        backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                        tension: 0.4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: true,
+                            labels: { color: '#fff' }
                         }
-                    }
-                } catch (e) {
-                    console.error('Failed to store session data:', e);
-                    this.fallbackStorage[key] = item;
-                }
-            }
-
-            get(key) {
-                let item = null;
-
-                // Try localStorage first
-                if (this.isLocalStorageAvailable) {
-                    try {
-                        const stored = localStorage.getItem(this.sessionPrefix + key);
-                        if (stored) {
-                            item = JSON.parse(stored);
-                        }
-                    } catch (e) {
-                        console.warn('localStorage read error:', e);
-                    }
-                }
-
-                // Try sessionStorage as fallback
-                if (!item) {
-                    try {
-                        const stored = sessionStorage.getItem(this.sessionPrefix + key);
-                        if (stored) {
-                            item = JSON.parse(stored);
-                        }
-                    } catch (e) {
-                        console.warn('sessionStorage read error:', e);
-                    }
-                }
-
-                // Try memory fallback
-                if (!item && this.fallbackStorage[key]) {
-                    item = this.fallbackStorage[key];
-                }
-
-                if (!item) return null;
-
-                // Check if session is still valid (same browser session)
-                if (item.sessionId !== this.getSessionId()) {
-                    this.clear(key);
-                    return null;
-                }
-
-                return item.data;
-            }
-
-            clear(key) {
-                if (this.isLocalStorageAvailable) {
-                    try {
-                        localStorage.removeItem(this.sessionPrefix + key);
-                    } catch (e) {
-                        console.warn('localStorage clear error:', e);
-                    }
-                }
-                
-                try {
-                    sessionStorage.removeItem(this.sessionPrefix + key);
-                } catch (e) {
-                    console.warn('sessionStorage clear error:', e);
-                }
-                
-                delete this.fallbackStorage[key];
-            }
-
-            clearAll() {
-                if (this.isLocalStorageAvailable) {
-                    try {
-                        const keys = Object.keys(localStorage);
-                        keys.forEach(key => {
-                            if (key.startsWith(this.sessionPrefix)) {
-                                localStorage.removeItem(key);
-                            }
-                        });
-                    } catch (e) {
-                        console.warn('localStorage clearAll error:', e);
-                    }
-                }
-
-                try {
-                    const keys = Object.keys(sessionStorage);
-                    keys.forEach(key => {
-                        if (key.startsWith(this.sessionPrefix)) {
-                            sessionStorage.removeItem(key);
-                        }
-                    });
-                } catch (e) {
-                    console.warn('sessionStorage clearAll error:', e);
-                }
-
-                this.fallbackStorage = {};
-            }
-
-            getSessionId() {
-                // Get or create session ID for this browser session
-                let sessionId = this.get('session_id');
-                if (!sessionId) {
-                    sessionId = 'session_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
-                    this.set('session_id', sessionId);
-                }
-                return sessionId;
-            }
-
-            getStorageInfo() {
-                const info = {
-                    localStorage: this.isLocalStorageAvailable,
-                    sessionStorage: true,
-                    fallbackKeys: Object.keys(this.fallbackStorage).length,
-                    sessionId: this.getSessionId()
-                };
-
-                // Count localStorage items
-                if (this.isLocalStorageAvailable) {
-                    try {
-                        const keys = Object.keys(localStorage);
-                        info.localStorageKeys = keys.filter(k => k.startsWith(this.sessionPrefix)).length;
-                    } catch (e) {
-                        info.localStorageKeys = 0;
-                    }
-                }
-
-                // Count sessionStorage items
-                try {
-                    const keys = Object.keys(sessionStorage);
-                    info.sessionStorageKeys = keys.filter(k => k.startsWith(this.sessionPrefix)).length;
-                } catch (e) {
-                    info.sessionStorageKeys = 0;
-                }
-
-                return info;
-            }
-        }
-
-        // Enhanced Browser Cache System with Railway compatibility
-        class DataCache {
-            constructor() {
-                this.cachePrefix = 'pocket_option_cache_';
-                this.defaultTTL = 30000; // 30 seconds
-                this.sessionManager = new SessionManager();
-                this.isLocalStorageAvailable = this.sessionManager.isLocalStorageAvailable;
-            }
-
-            set(key, data, ttl = this.defaultTTL) {
-                const item = {
-                    data: data,
-                    timestamp: Date.now(),
-                    ttl: ttl
-                };
-
-                try {
-                    if (this.isLocalStorageAvailable) {
-                        localStorage.setItem(this.cachePrefix + key, JSON.stringify(item));
-                    } else {
-                        // Use session manager for Railway compatibility
-                        this.sessionManager.set('cache_' + key, item);
-                    }
-                } catch (e) {
-                    console.error('Cache set error:', e);
-                    this.sessionManager.set('cache_' + key, item);
-                }
-            }
-
-            get(key) {
-                let item = null;
-
-                // Try localStorage first
-                if (this.isLocalStorageAvailable) {
-                    try {
-                        const stored = localStorage.getItem(this.cachePrefix + key);
-                        if (stored) {
-                            item = JSON.parse(stored);
-                        }
-                    } catch (e) {
-                        console.warn('Cache get error:', e);
-                    }
-                }
-
-                // Try session manager fallback
-                if (!item) {
-                    item = this.sessionManager.get('cache_' + key);
-                }
-
-                if (!item) return null;
-
-                // Check TTL
-                const now = Date.now();
-                if (now - item.timestamp > item.ttl) {
-                    this.clear(key);
-                    return null;
-                }
-
-                return item.data;
-            }
-
-            clear(key) {
-                if (this.isLocalStorageAvailable) {
-                    try {
-                        localStorage.removeItem(this.cachePrefix + key);
-                    } catch (e) {
-                        console.warn('Cache clear error:', e);
-                    }
-                }
-                
-                this.sessionManager.clear('cache_' + key);
-            }
-
-            clearAll() {
-                if (this.isLocalStorageAvailable) {
-                    try {
-                        const keys = Object.keys(localStorage);
-                        keys.forEach(key => {
-                            if (key.startsWith(this.cachePrefix)) {
-                                localStorage.removeItem(key);
-                            }
-                        });
-                    } catch (e) {
-                        console.warn('Cache clearAll error:', e);
-                    }
-                }
-                
-                // Clear session manager cache items
-                const cacheKeys = [];
-                for (let i = 0; i < sessionStorage.length; i++) {
-                    const key = sessionStorage.key(i);
-                    if (key && key.startsWith('pocket_option_cache_')) {
-                        cacheKeys.push(key.replace('pocket_option_cache_', 'cache_'));
-                    }
-                }
-                cacheKeys.forEach(key => this.sessionManager.clear(key));
-            }
-
-            clearExpired() {
-                const now = Date.now();
-                
-                // Clear expired localStorage items
-                if (this.isLocalStorageAvailable) {
-                    try {
-                        const keys = Object.keys(localStorage);
-                        keys.forEach(key => {
-                            if (key.startsWith(this.cachePrefix)) {
-                                try {
-                                    const item = JSON.parse(localStorage.getItem(key));
-                                    if (now - item.timestamp > item.ttl) {
-                                        localStorage.removeItem(key);
-                                    }
-                                } catch (e) {
-                                    localStorage.removeItem(key);
-                                }
-                            }
-                        });
-                    } catch (e) {
-                        console.warn('Cache clearExpired error:', e);
-                    }
-                }
-
-                // Clear expired session items
-                for (let i = 0; i < sessionStorage.length; i++) {
-                    const key = sessionStorage.key(i);
-                    if (key && key.startsWith('pocket_option_session_cache_')) {
-                        try {
-                            const cacheKey = key.replace('pocket_option_session_cache_', 'cache_');
-                            const item = this.sessionManager.get(cacheKey);
-                            if (item && (now - item.timestamp > item.ttl)) {
-                                this.sessionManager.clear(cacheKey);
-                            }
-                        } catch (e) {
-                            // Clear invalid items
-                            sessionStorage.removeItem(key);
+                    },
+                    scales: {
+                        x: {
+                            grid: { color: 'rgba(255, 255, 255, 0.1)' },
+                            ticks: { color: '#fff' }
+                        },
+                        y: {
+                            grid: { color: 'rgba(255, 255, 255, 0.1)' },
+                            ticks: { color: '#fff' }
                         }
                     }
                 }
-            }
-        }
-
-        const dataCache = new DataCache();
-        const sessionManager = new SessionManager();
-
-        // Utility Functions
-        function showAlert(message, type = 'info') {
-            const alertsContainer = document.getElementById('alerts');
-            const alert = document.createElement('div');
-            alert.className = `alert alert-${type}`;
-            alert.innerHTML = message;
-            alertsContainer.appendChild(alert);
-            
-            setTimeout(() => {
-                alert.remove();
-            }, 5000);
-        }
-
-        // Session Storage Testing Functions
-        function testSessionStorage() {
-            const info = sessionManager.getStorageInfo();
-            console.log('Session Storage Info:', info);
-            
-            let message = `Session Storage Test:\n`;
-            message += `• LocalStorage: ${info.localStorage ? 'Available' : 'Not Available'} (${info.localStorageKeys || 0} keys)\n`;
-            message += `• SessionStorage: Available (${info.sessionStorageKeys || 0} keys)\n`;
-            message += `• Fallback Storage: ${info.fallbackKeys} keys\n`;
-            message += `• Session ID: ${info.sessionId}`;
-            
-            showAlert(message, 'info');
-            
-            // Store test data
-            sessionManager.set('test_data', {
-                timestamp: Date.now(),
-                browser: navigator.userAgent,
-                hostname: window.location.hostname
             });
-            
-            // Retrieve test data
-            const testData = sessionManager.get('test_data');
-            if (testData) {
-                console.log('Session data stored/retrieved successfully:', testData);
-            }
         }
 
-        function showStorageStatus() {
-            const info = sessionManager.getStorageInfo();
-            const cacheInfo = {
-                cacheItems: 0,
-                expiredItems: 0
-            };
-            
-            // Count cache items
+        // API calls
+        async function apiCall(endpoint, method = 'GET', data = null) {
             try {
-                const keys = Object.keys(localStorage);
-                cacheInfo.cacheItems = keys.filter(k => k.startsWith('pocket_option_cache_')).length;
-            } catch (e) {
-                // localStorage not available
-            }
-            
-            let status = `Storage Status:\n`;
-            status += `• Environment: ${window.location.hostname}\n`;
-            status += `• LocalStorage: ${info.localStorage ? 'Working' : 'Fallback Mode'}\n`;
-            status += `• Session ID: ${info.sessionId}\n`;
-            status += `• Cache Items: ${cacheInfo.cacheItems}\n`;
-            status += `• Session Items: ${info.sessionStorageKeys}\n`;
-            
-            showAlert(status, 'info');
-        }
-
-        async function apiCall(endpoint, method = 'GET', data = null, useCache = true) {
-            try {
-                // Check cache first for GET requests
-                if (method === 'GET' && useCache) {
-                    const cacheKey = endpoint.replace(/[^a-zA-Z0-9]/g, '_');
-                    const cachedData = dataCache.get(cacheKey);
-                    if (cachedData) {
-                        console.log(`CACHE HIT: ${endpoint}`);
-                        return cachedData;
-                    }
-                }
-
                 const options = {
                     method: method,
                     headers: {
@@ -815,432 +229,206 @@
                     }
                 };
                 
-                if (data) {
+                if (data && method !== 'GET') {
                     options.body = JSON.stringify(data);
                 }
                 
-                const response = await fetch(API_BASE + endpoint, options);
+                const response = await fetch(`${API_BASE}${endpoint}`, options);
                 const result = await response.json();
                 
                 if (!response.ok) {
-                    throw new Error(result.error || `HTTP ${response.status}`);
-                }
-                
-                // Cache successful GET requests
-                if (method === 'GET' && useCache && result) {
-                    const cacheKey = endpoint.replace(/[^a-zA-Z0-9]/g, '_');
-                    // Use different TTL based on data type
-                    let ttl = 30000; // Default 30 seconds
-                    if (endpoint.includes('balance')) ttl = 5000; // 5 seconds for balance
-                    if (endpoint.includes('mode')) ttl = 60000; // 1 minute for mode
-                    if (endpoint.includes('analysis')) ttl = 15000; // 15 seconds for analysis
-                    
-                    dataCache.set(cacheKey, result, ttl);
-                    console.log(`CACHE SET: ${endpoint} (TTL: ${ttl}ms)`);
+                    throw new Error(result.error || 'API call failed');
                 }
                 
                 return result;
             } catch (error) {
-                showAlert(`API Error: ${error.message}`, 'error');
-                throw error;
+                console.error('API Error:', error);
+                showNotification('API Error: ' + error.message, 'error');
+                return null;
             }
         }
 
-        // Mode Switching Functions
-        async function getCurrentMode() {
-            try {
-                const modeData = await apiCall('/api/mode');
-                updateModeUI(modeData.current_mode);
-                return modeData.current_mode;
-            } catch (error) {
-                // Fallback to UI state
-                return document.getElementById('current-mode').textContent.toLowerCase();
+        // Bot control functions
+        async function startBot() {
+            const result = await apiCall('/start', 'POST');
+            if (result && result.success) {
+                showNotification('Bot started successfully!', 'success');
+                setTimeout(refreshData, 2000);
             }
         }
 
-        async function setDataMode(mode) {
-            try {
-                showAlert(`Switching to ${mode} mode...`, 'info');
+        async function stopBot() {
+            const result = await apiCall('/stop', 'POST');
+            if (result && result.success) {
+                showNotification('Bot stopped successfully!', 'success');
+                setTimeout(refreshData, 1000);
+            }
+        }
+
+        async function createBackup() {
+            const result = await apiCall('/backup', 'POST');
+            if (result && result.success) {
+                showNotification('Backup created successfully!', 'success');
+            }
+        }
+
+        // Refresh data
+        async function refreshData() {
+            await Promise.all([
+                updateStatus(),
+                updateTrades(),
+                updateLogs()
+            ]);
+        }
+
+        // Update bot status
+        async function updateStatus() {
+            const status = await apiCall('/status');
+            if (status) {
+                // Update bot status
+                const botStatusEl = document.getElementById('bot-status');
+                const botStatusTextEl = document.getElementById('bot-status-text');
+                const startBtn = document.getElementById('start-btn');
+                const stopBtn = document.getElementById('stop-btn');
                 
-                const result = await apiCall('/api/mode', 'POST', { mode: mode }, false);
-                
-                if (result.success) {
-                    showAlert(result.message, 'success');
-                    updateModeUI(mode);
-                    
-                    // Clear cache when switching modes
-                    dataCache.clear();
-                    
-                    // Refresh all data
-                    setTimeout(() => {
-                        fetchBalance();
-                        refreshStatus();
-                    }, 500);
+                if (status.running) {
+                    botStatusEl.textContent = 'RUNNING';
+                    botStatusEl.className = 'px-3 py-1 rounded-full text-xs font-medium bg-green-600';
+                    botStatusTextEl.textContent = 'Bot is active and monitoring';
+                    startBtn.disabled = true;
+                    stopBtn.disabled = false;
+                } else {
+                    botStatusEl.textContent = 'OFFLINE';
+                    botStatusEl.className = 'px-3 py-1 rounded-full text-xs font-medium bg-gray-700';
+                    botStatusTextEl.textContent = 'Bot is not running';
+                    startBtn.disabled = false;
+                    stopBtn.disabled = true;
                 }
-            } catch (error) {
-                showAlert(`Failed to switch mode: ${error.message}`, 'error');
+                
+                // Update connection status
+                const connectionStatusEl = document.getElementById('connection-status');
+                const connected = status.telegram_connected && status.pocketoption_connected;
+                
+                if (connected) {
+                    connectionStatusEl.innerHTML = `
+                        <span class="w-3 h-3 bg-green-500 rounded-full"></span>
+                        <span class="text-sm">Connected</span>
+                    `;
+                } else {
+                    connectionStatusEl.innerHTML = `
+                        <span class="w-3 h-3 bg-yellow-500 rounded-full pulse"></span>
+                        <span class="text-sm">Connecting...</span>
+                    `;
+                }
+                
+                // Update stats
+                document.getElementById('balance').textContent = `$${status.current_balance.toFixed(2)}`;
+                document.getElementById('total-trades').textContent = status.total_trades;
+                document.getElementById('last-signal').textContent = status.last_signal || 'No signal yet';
+                
+                // Update win rate
+                const winRate = status.total_trades > 0 ? 
+                    ((status.winning_trades / status.total_trades) * 100).toFixed(1) : 0;
+                document.getElementById('win-rate').textContent = `${winRate}%`;
             }
         }
 
-        function updateModeUI(mode) {
-            const currentModeEl = document.getElementById('current-mode');
-            const modeIndicatorEl = document.getElementById('mode-indicator');
-            const btnRealMode = document.getElementById('btn-real-mode');
-            const btnDummyMode = document.getElementById('btn-dummy-mode');
-            
-            currentModeEl.textContent = mode.charAt(0).toUpperCase() + mode.slice(1);
-            
-            if (mode === 'real') {
-                modeIndicatorEl.textContent = '🟢';
-                btnRealMode.classList.add('btn-success');
-                btnDummyMode.classList.remove('btn-success');
-            } else {
-                modeIndicatorEl.textContent = '🎭';
-                btnDummyMode.classList.add('btn-success');
-                btnRealMode.classList.remove('btn-success');
+        // Update trades
+        async function updateTrades() {
+            const tradesData = await apiCall('/trades');
+            if (tradesData && tradesData.trades) {
+                const container = document.getElementById('trades-container');
+                
+                if (tradesData.trades.length === 0) {
+                    container.innerHTML = '<p class="text-gray-400 text-center py-8">No trades yet</p>';
+                    return;
+                }
+                
+                container.innerHTML = tradesData.trades.slice(0, 10).map(trade => {
+                    const resultClass = trade.result === 'WIN' ? 'trade-win' : 
+                                      trade.result === 'LOSS' ? 'trade-loss' : 'trade-pending';
+                    const resultIcon = trade.result === 'WIN' ? 'check-circle' : 
+                                      trade.result === 'LOSS' ? 'x-circle' : 'clock';
+                    
+                    return `
+                        <div class="${resultClass} rounded-lg p-4 text-white">
+                            <div class="flex justify-between items-start">
+                                <div>
+                                    <div class="font-semibold">${trade.asset || 'Unknown'}</div>
+                                    <div class="text-sm opacity-90">${trade.direction} • ${trade.duration}min</div>
+                                    <div class="text-xs opacity-75">${trade.timestamp || ''}</div>
+                                </div>
+                                <div class="text-right">
+                                    <div class="flex items-center space-x-1">
+                                        <i data-lucide="${resultIcon}" class="w-4 h-4"></i>
+                                        <span class="font-semibold">${trade.result}</span>
+                                    </div>
+                                    <div class="text-sm">${trade.amount || '$0'}</div>
+                                    <div class="text-xs">${trade.profit || '0'}</div>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+                
+                // Re-initialize icons
+                lucide.createIcons();
             }
         }
 
-        function clearCache() {
-            dataCache.clear();
-            showAlert('Browser cache cleared successfully', 'success');
+        // Update logs
+        async function updateLogs() {
+            const logsData = await apiCall('/logs');
+            if (logsData && logsData.logs) {
+                const container = document.getElementById('logs-container');
+                const logs = logsData.logs.slice(-20).reverse(); // Show last 20 logs
+                
+                container.innerHTML = logs.map(log => {
+                    const timestamp = log.split(' | ')[0] || '';
+                    const message = log.split(' | ')[1] || log;
+                    
+                    return `<div class="mb-1">
+                        <span class="text-gray-500">[${timestamp}]</span>
+                        <span class="text-gray-300">${message}</span>
+                    </div>`;
+                }).join('');
+            }
+        }
+
+        // Show notification
+        function showNotification(message, type = 'info') {
+            const notification = document.createElement('div');
+            notification.className = `fixed top-4 right-4 p-4 rounded-lg shadow-lg z-50 ${
+                type === 'success' ? 'bg-green-600' : 
+                type === 'error' ? 'bg-red-600' : 'bg-blue-600'
+            }`;
+            notification.innerHTML = `
+                <div class="flex items-center space-x-2">
+                    <i data-lucide="${type === 'success' ? 'check-circle' : type === 'error' ? 'x-circle' : 'info'}" class="w-5 h-5"></i>
+                    <span>${message}</span>
+                </div>
+            `;
             
-            // Refresh all data
+            document.body.appendChild(notification);
+            lucide.createIcons();
+            
             setTimeout(() => {
-                fetchBalance();
-                refreshStatus();
-                getCurrentMode();
-            }, 500);
+                notification.remove();
+            }, 3000);
         }
 
-        async function clearAllSessions() {
-            try {
-                showAlert('Clearing all sessions...', 'info');
-                
-                const result = await apiCall('/api/sessions/clear', 'POST', {}, false);
-                
-                if (result.success) {
-                    showAlert(result.message, 'success');
-                    console.log('Session clear result:', result);
-                    
-                    // Clear browser session storage too
-                    sessionManager.clearAll();
-                    dataCache.clearAll();
-                    
-                    // Refresh all data
-                    setTimeout(() => {
-                        fetchBalance();
-                        refreshStatus();
-                        getCurrentMode();
-                        showStorageStatus();
-                    }, 500);
-                } else {
-                    showAlert('Failed to clear sessions', 'error');
-                }
-            } catch (error) {
-                showAlert(`Failed to clear sessions: ${error.message}`, 'error');
-            }
+        // Auto refresh
+        function startAutoRefresh() {
+            refreshInterval = setInterval(() => {
+                refreshData();
+            }, 5000); // Refresh every 5 seconds
         }
 
-        // Trading Configuration Functions
-        async function loadTradingConfig() {
-            try {
-                const result = await apiCall('/api/config/trading', 'GET');
-                
-                if (result.success) {
-                    const config = result.config;
-                    
-                    // Update form fields
-                    document.getElementById('trade-amount').value = config.trade_amount;
-                    document.getElementById('multiplier').value = config.multiplier;
-                    document.getElementById('initial-balance').value = config.initial_balance;
-                    document.getElementById('account-mode').value = config.is_demo.toString();
-                    
-                    updateConfigStatus('Configuration loaded successfully', 'success');
-                } else {
-                    updateConfigStatus('Failed to load configuration', 'error');
-                }
-            } catch (error) {
-                updateConfigStatus(`Error loading configuration: ${error.message}`, 'error');
+        // Clean up on page unload
+        window.addEventListener('beforeunload', () => {
+            if (refreshInterval) {
+                clearInterval(refreshInterval);
             }
-        }
-
-        async function updateTradingConfig() {
-            try {
-                // Get values from form
-                const tradeAmount = parseFloat(document.getElementById('trade-amount').value);
-                const multiplier = parseFloat(document.getElementById('multiplier').value);
-                const initialBalance = parseFloat(document.getElementById('initial-balance').value);
-                const isDemo = document.getElementById('account-mode').value === 'true';
-                
-                // Validate inputs
-                if (tradeAmount <= 0) {
-                    updateConfigStatus('Trade amount must be positive', 'error');
-                    return;
-                }
-                
-                if (multiplier <= 0) {
-                    updateConfigStatus('Multiplier must be positive', 'error');
-                    return;
-                }
-                
-                if (initialBalance <= 0) {
-                    updateConfigStatus('Initial balance must be positive', 'error');
-                    return;
-                }
-                
-                updateConfigStatus('Saving configuration...', 'info');
-                
-                const result = await apiCall('/api/config/trading', 'POST', {
-                    trade_amount: tradeAmount,
-                    multiplier: multiplier,
-                    is_demo: isDemo,
-                    initial_balance: initialBalance
-                });
-                
-                if (result.success) {
-                    updateConfigStatus('Configuration saved successfully!', 'success');
-                    
-                    // Update mode indicator if account mode changed
-                    if (isDemo !== get_is_demo()) {
-                        // Force refresh of other components
-                        setTimeout(() => {
-                            fetchBalance();
-                            refreshStatus();
-                        }, 500);
-                    }
-                } else {
-                    updateConfigStatus(`Failed to save configuration: ${result.error}`, 'error');
-                }
-            } catch (error) {
-                updateConfigStatus(`Error saving configuration: ${error.message}`, 'error');
-            }
-        }
-
-        async function resetTradingConfig() {
-            try {
-                updateConfigStatus('Resetting configuration...', 'info');
-                
-                const result = await apiCall('/api/config/trading/reset', 'POST');
-                
-                if (result.success) {
-                    // Update form fields with reset values
-                    const config = result.config;
-                    document.getElementById('trade-amount').value = config.trade_amount;
-                    document.getElementById('multiplier').value = config.multiplier;
-                    document.getElementById('initial-balance').value = config.initial_balance;
-                    document.getElementById('account-mode').value = config.is_demo.toString();
-                    
-                    updateConfigStatus('Configuration reset to defaults', 'success');
-                    
-                    // Refresh other components
-                    setTimeout(() => {
-                        fetchBalance();
-                        refreshStatus();
-                    }, 500);
-                } else {
-                    updateConfigStatus(`Failed to reset configuration: ${result.error}`, 'error');
-                }
-            } catch (error) {
-                updateConfigStatus(`Error resetting configuration: ${error.message}`, 'error');
-            }
-        }
-
-        function updateConfigStatus(message, type) {
-            const statusDiv = document.getElementById('config-status');
-            statusDiv.textContent = message;
-            statusDiv.className = `config-status alert-${type}`;
-            
-            // Auto-clear success messages after 3 seconds
-            if (type === 'success') {
-                setTimeout(() => {
-                    statusDiv.textContent = '';
-                    statusDiv.className = 'config-status';
-                }, 3000);
-            }
-        }
-
-        // Balance Functions
-        async function fetchBalance() {
-            try {
-                const balance = await apiCall('/api/balance');
-                document.getElementById('demo-balance').textContent = `$${balance.demo_balance.toFixed(2)}`;
-                document.getElementById('real-balance').textContent = `$${balance.real_balance.toFixed(2)}`;
-                
-                // Show mode indicator in balance
-                if (balance.mode === 'dummy') {
-                    document.getElementById('demo-balance').title = 'Dummy Data';
-                    document.getElementById('real-balance').title = 'Dummy Data';
-                } else {
-                    document.getElementById('demo-balance').title = '';
-                    document.getElementById('real-balance').title = '';
-                }
-                
-                if (balance.warning) {
-                    showAlert(balance.warning, 'warning');
-                }
-            } catch (error) {
-                // Error already shown by apiCall
-            }
-        }
-
-        // Session Functions
-        async function checkSession() {
-            try {
-                const sessionStatus = await apiCall('/api/telegram/check-session');
-                const sessionDiv = document.getElementById('session-status');
-                const otpSection = document.getElementById('otp-section');
-                
-                if (sessionStatus.session_exists) {
-                    sessionDiv.className = 'session-info';
-                    sessionDiv.innerHTML = `
-                        <div style="display: flex; align-items: center;">
-                            <span class="status-indicator status-online"></span>
-                            <span><strong>✅ Session Active</strong></span>
-                        </div>
-                        <div style="margin-top: 10px;">
-                            <strong>Phone:</strong> ${sessionStatus.phone}<br>
-                            <strong>Type:</strong> ${sessionStatus.session_type}<br>
-                            <strong>String Session:</strong> ${sessionStatus.string_session_exists ? 'Saved' : 'Not Saved'}
-                        </div>
-                    `;
-                    otpSection.classList.add('hidden');
-                } else {
-                    sessionDiv.className = 'session-info session-expired';
-                    sessionDiv.innerHTML = `
-                        <div style="display: flex; align-items: center;">
-                            <span class="status-indicator status-offline"></span>
-                            <span><strong>❌ No Session Found</strong></span>
-                        </div>
-                        <div style="margin-top: 10px;">
-                            <strong>Phone:</strong> ${sessionStatus.phone || 'Not configured'}<br>
-                            <strong>Credentials:</strong> ${sessionStatus.credentials_configured ? 'Configured' : 'Not configured'}
-                        </div>
-                    `;
-                    otpSection.classList.remove('hidden');
-                }
-                
-            } catch (error) {
-                document.getElementById('session-status').innerHTML = 
-                    '<div class="status-indicator status-offline"></div>❌ Failed to check session';
-            }
-        }
-
-        async function sendOTP() {
-            try {
-                showAlert('Sending OTP code...', 'info');
-                await apiCall('/api/telegram/send-code', 'POST');
-                showAlert('OTP code sent to your phone!', 'success');
-            } catch (error) {
-                // Error already shown by apiCall
-            }
-        }
-
-        async function verifyOTP() {
-            try {
-                const code = document.getElementById('otp-code').value;
-                if (!code) {
-                    showAlert('Please enter OTP code', 'error');
-                    return;
-                }
-                
-                showAlert('Verifying OTP...', 'info');
-                await apiCall('/api/telegram/verify-otp', 'POST', { code: code });
-                showAlert('OTP verified successfully!', 'success');
-                document.getElementById('otp-code').value = '';
-                
-                // Refresh session status
-                setTimeout(checkSession, 2000);
-                
-            } catch (error) {
-                // Error already shown by apiCall
-            }
-        }
-
-        // Bot Status Functions
-        async function refreshStatus() {
-            try {
-                document.getElementById('bot-status').innerHTML = '<div class="loading"></div>';
-                
-                const [trading, analysis] = await Promise.all([
-                    apiCall('/api/trading/status'),
-                    apiCall('/api/trades/analysis')
-                ]);
-                
-                // Update Bot Status
-                const botStatus = trading.active ? 
-                    '<span class="status-indicator status-online"></span>Active' : 
-                    '<span class="status-indicator status-offline"></span>Inactive';
-                document.getElementById('bot-status').innerHTML = botStatus;
-                
-                // Update Total Trades
-                document.getElementById('total-trades').textContent = trading.past_trades || 0;
-                
-                // Update Martingale Info
-                document.getElementById('current-step').textContent = analysis.current_step;
-                document.getElementById('current-amount').textContent = `$${analysis.current_trade_amount.toFixed(2)}`;
-                
-            } catch (error) {
-                document.getElementById('bot-status').innerHTML = 
-                    '<span class="status-indicator status-offline"></span>Error';
-            }
-        }
-
-        // Initialize on page load
-        window.addEventListener('load', () => {
-            // Test session storage availability
-            console.log('Testing session storage for Railway deployment...');
-            const storageInfo = sessionManager.getStorageInfo();
-            console.log('Storage Info:', storageInfo);
-            
-            // Show storage status in console
-            if (!storageInfo.localStorage) {
-                console.warn('localStorage not available - using fallback storage for Railway');
-                showAlert('Using fallback storage - localStorage not available', 'warning');
-            } else {
-                console.log('localStorage available - standard storage mode');
-            }
-            
-            // Store session info
-            sessionManager.set('page_load', {
-                timestamp: Date.now(),
-                hostname: window.location.hostname,
-                userAgent: navigator.userAgent,
-                storageType: storageInfo.localStorage ? 'localStorage' : 'fallback'
-            });
-            
-            // Clear expired cache entries
-            dataCache.clearExpired();
-            
-            // Load current mode
-            getCurrentMode();
-            
-            // Load initial data
-            checkSession();
-            fetchBalance();
-            refreshStatus();
-            loadTradingConfig();
-            
-            // Auto-refresh every 30 seconds
-            setInterval(() => {
-                // Clear expired cache before refresh
-                dataCache.clearExpired();
-                
-                checkSession();
-                fetchBalance();
-                refreshStatus();
-            }, 30000);
-            
-            // Update mode every 10 seconds to sync with server
-            setInterval(() => {
-                getCurrentMode();
-            }, 10000);
-            
-            // Periodic storage cleanup every 5 minutes
-            setInterval(() => {
-                dataCache.clearExpired();
-                console.log('Periodic storage cleanup completed');
-            }, 300000);
         });
     </script>
 </body>

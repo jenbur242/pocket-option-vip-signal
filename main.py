@@ -5,12 +5,16 @@ import sys
 import time
 import csv
 from pathlib import Path
+from dotenv import load_dotenv
 from telethon.sync import TelegramClient
 from telethon.sessions import StringSession
 from telethon.tl.functions.messages import GetHistoryRequest
 from telethon import events
 from datetime import datetime, timedelta
 from typing import Dict
+
+# Load environment variables
+load_dotenv()
 
 # Add parent directory to Python path for imports
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -23,7 +27,7 @@ from pocketoptionapi_async.models import OrderDirection, OrderStatus
 API_ID = '34506083'
 API_HASH = '5676893fa1c0fe15eca5dbbceb3ab6a2'
 PHONE_NUMBER = '+12428018500'
-STRING_SESSION = ''  # Will be set after session creation
+STRING_SESSION = '1AZWarzkBu3VuwqWk96RSig3o6wO73aGKaGF3TkEtOMMXwTQQWNjGX2tU5t3i6eIHbBesaMAQWpU3PfjnXNleOmBIv4QXVvn5LnMNq36dGkLw9dCk7zOvvbuETBtzS4sNdcAISyNQfjg21-p2m31f0C65oTxXlI8ndW6bHmbXaXBm18fIHNOp-6G8AKF7iklIrCWuG8EkMPs-BfSLMrmzuoGbuh8ymqecpuM1TW2nhz1BHQpswQDX3BwTA1f_IkbWoGn0ePSml8_Zz5xJmNiiShbaWRjuRnACiHt7u6zFIAjHRpS1ds3jRv7GgUjIJlUERRA2gWKrl9hxuATvY03ah0kmP8zcWLI='  # Working session from po_vip_testing_1773343014.session
 
 # Hardcoded SSIDs
 SSID_DEMO = '42["auth",{"session":"8kmju1f41cibg1vg5pihe37d7u","isDemo":1,"uid":116040367,"platform":2,"isFastHistory":true,"isOptimized":true}]'
@@ -34,40 +38,27 @@ CHANNELS = [
     {'username': 'Pocket_Option_Signals_Vip', 'id': None, 'name': 'Pocket Option Signals VIP'}
 ]
 
-# Dynamic trading configuration (can be updated via API)
-dynamic_trade_amount = 5.0
-dynamic_multiplier = 2.5
-dynamic_is_demo = True
-dynamic_initial_balance = 10000.0
+# Trading configuration from .env
+TRADE_AMOUNT = float(os.getenv('TRADE_AMOUNT', '5.0'))
+MULTIPLIER = float(os.getenv('MULTIPLIER', '2.5'))
+IS_DEMO = os.getenv('IS_DEMO', 'true').lower() == 'true'
+INITIAL_BALANCE = float(os.getenv('INITIAL_BALANCE', '10000.0'))
 
 def get_trade_amount():
-    """Get current trade amount - dynamic"""
-    return dynamic_trade_amount
+    """Get current trade amount - from .env"""
+    return TRADE_AMOUNT
 
 def get_multiplier():
-    """Get multiplier - dynamic"""
-    return dynamic_multiplier
+    """Get multiplier - from .env"""
+    return MULTIPLIER
 
 def get_is_demo():
-    """Get account type - dynamic"""
-    return dynamic_is_demo
+    """Get account type - from .env"""
+    return IS_DEMO
 
 def get_initial_balance():
-    """Get initial balance - dynamic"""
-    return dynamic_initial_balance
-
-def update_trading_config(trade_amount=None, multiplier=None, is_demo=None, initial_balance=None):
-    """Update trading configuration dynamically"""
-    global dynamic_trade_amount, dynamic_multiplier, dynamic_is_demo, dynamic_initial_balance
-    
-    if trade_amount is not None:
-        dynamic_trade_amount = float(trade_amount)
-    if multiplier is not None:
-        dynamic_multiplier = float(multiplier)
-    if is_demo is not None:
-        dynamic_is_demo = bool(is_demo)
-    if initial_balance is not None:
-        dynamic_initial_balance = float(initial_balance)
+    """Get initial balance - from .env"""
+    return INITIAL_BALANCE
 
 # Global martingale step
 global_martingale_step = 0
@@ -78,53 +69,94 @@ past_trades = []
 # Persistent client
 persistent_client = None
 
-# CSV folder
-CSV_FOLDER = 'trade_results'
-
-def ensure_csv_folder():
-    """Create CSV folder if it doesn't exist"""
-    Path(CSV_FOLDER).mkdir(exist_ok=True)
-
-def get_csv_filename():
-    """Get CSV filename for current date"""
-    today = datetime.now().strftime('%Y-%m-%d')
-    return os.path.join(CSV_FOLDER, f'trades_{today}.csv')
-
-def save_trade_to_csv(trade_data: Dict):
-    """Save trade result to CSV file"""
+def save_trade_to_csv(trade_data):
+    """Save trade to CSV file in both local and Railway storage"""
     try:
-        ensure_csv_folder()
-        csv_file = get_csv_filename()
+        from datetime import datetime
+        from pathlib import Path
         
-        file_exists = os.path.exists(csv_file)
+        # Create directories in both local and Railway storage
+        csv_dirs = ['telegram/trades', '/tmp/csv']
         
-        headers = [
-            'timestamp', 'date', 'time', 'asset', 'direction', 
-            'amount', 'step', 'duration', 'result', 'profit_loss',
-            'balance_before', 'balance_after', 'multiplier'
-        ]
+        for csv_dir in csv_dirs:
+            Path(csv_dir).mkdir(parents=True, exist_ok=True)
         
-        with open(csv_file, 'a', newline='', encoding='utf-8') as f:
-            writer = csv.DictWriter(f, fieldnames=headers)
-            
-            if not file_exists:
-                writer.writeheader()
-            
-            writer.writerow(trade_data)
+        # Generate filename with current date
+        date_str = datetime.now().strftime('%Y-%m-%d')
+        csv_file = f'telegram/trades/trades_{date_str}.csv'
+        railway_csv_file = f'/tmp/csv/trades_{date_str}.csv'
         
-        print(f"Trade saved to CSV: {csv_file}")
+        # Save to both locations
+        for file_path in [csv_file, railway_csv_file]:
+            try:
+                file_exists = os.path.exists(file_path)
+                
+                with open(file_path, 'a', newline='', encoding='utf-8') as f:
+                    writer = csv.writer(f)
+                    
+                    if not file_exists:
+                        writer.writerow([
+                            'timestamp', 'asset', 'direction', 'amount', 
+                            'duration', 'result', 'profit', 'balance'
+                        ])
+                    
+                    writer.writerow([
+                        trade_data.get('timestamp', ''),
+                        trade_data.get('asset', ''),
+                        trade_data.get('direction', ''),
+                        trade_data.get('amount', ''),
+                        trade_data.get('duration', ''),
+                        trade_data.get('result', ''),
+                        trade_data.get('profit', ''),
+                        trade_data.get('balance', '')
+                    ])
+                
+                print(f"Trade saved to CSV: {file_path}")
+                
+            except Exception as e:
+                print(f"Error saving to {file_path}: {e}")
         
     except Exception as e:
         print(f"Error saving to CSV: {e}")
 
 def log_message(message: str):
-    """Log message to console and file"""
-    print(message)
+    """Log message to console and Railway storage"""
     try:
-        with open('telegram/trading_log.txt', 'a', encoding='utf-8') as f:
-            f.write(f"{message}\n")
+        # Remove problematic Unicode characters for Windows console
+        import re
+        # Replace common problematic Unicode characters with ASCII equivalents
+        message = message.replace('📱', '[PHONE]').replace('📲', '[SMS]').replace('✅', '[OK]').replace('❌', '[ERROR]').replace('🔢', '[INPUT]').replace('🔓', '[VERIFY]').replace('📋', '[INFO]').replace('🧹', '[CLEAN]').replace('⚠️', '[WARNING]')
+        print(message)
     except:
-        pass
+        # Fallback to plain print if encoding fails
+        try:
+            print(str(message).encode('ascii', 'ignore').decode('ascii'))
+        except:
+            print("LOG MESSAGE ENCODING ERROR")
+    
+    # Log to Railway storage
+    try:
+        # Ensure Railway storage directories exist
+        import os
+        from pathlib import Path
+        
+        # Create directories in Railway storage
+        log_dirs = ['/tmp/logs/telegram', 'telegram/logs']
+        for log_dir in log_dirs:
+            Path(log_dir).mkdir(parents=True, exist_ok=True)
+        
+        # Log to both local and Railway storage
+        log_files = ['telegram/trading_log.txt', '/tmp/logs/telegram/trading_log.txt']
+        
+        for log_file in log_files:
+            try:
+                with open(log_file, 'a', encoding='utf-8') as f:
+                    f.write(f"{datetime.now().strftime('%Y-%m-%d %H:%M:%S')} | {message}\n")
+            except:
+                pass
+                
+    except Exception as e:
+        print(f"Storage logging error: {e}")
 
 def map_asset_name(pair: str) -> str:
     """Map asset pair to Pocket Option format"""
@@ -327,7 +359,7 @@ async def place_trade(asset: str, direction: str, duration: int):
         log_message(f"\n{'='*60}")
         log_message(f"TRADE AMOUNT CALCULATION - STEP {current_step}")
         log_message(f"{'='*60}")
-        log_message(f"Base Amount (from .env): ${trade_amount:.2f}")
+        log_message(f"Base Amount: ${trade_amount:.2f}")
         log_message(f"Multiplier: {multiplier}x")
         log_message(f"Current Martingale Step: {current_step}")
         log_message(f"Formula: ${trade_amount:.2f} × ({multiplier}^{current_step})")
@@ -565,28 +597,6 @@ async def main():
     """Main function - Listen to Telegram and place trades"""
     global STRING_SESSION
     
-    # Check if bot is already running
-    try:
-        import psutil
-        current_pid = os.getpid()
-        python_processes = []
-        
-        for proc in psutil.process_iter(['pid', 'name', 'cmdline']):
-            try:
-                if 'python' in proc.info['name'].lower():
-                    cmdline = ' '.join(proc.info['cmdline'] or [])
-                    if 'main.py' in cmdline and proc.info['pid'] != current_pid:
-                        python_processes.append(proc.info['pid'])
-            except:
-                pass
-        
-        if python_processes:
-            log_message(f"Bot is already running (PIDs: {python_processes})")
-            log_message("Please stop other instances first")
-            return
-    except ImportError:
-        pass  # psutil not available, skip check
-    
     # Pre-connect to PocketOption
     log_message("\n" + "="*60)
     log_message("POCKET OPTION TRADING BOT")
@@ -596,12 +606,12 @@ async def main():
         log_message(f"  - {ch['name']} (ID: {ch['id']})")
     log_message(f"Account: {'DEMO' if get_is_demo() else 'REAL'}")
     
-    # Show hardcoded configuration
+    # Show configuration from .env
     trade_amount_parsed = get_trade_amount()
-    log_message(f"Trade Amount: ${trade_amount_parsed} (hardcoded)")
+    log_message(f"Trade Amount: ${trade_amount_parsed} (from .env)")
     log_message(f"Initial Amount: ${trade_amount_parsed}")
     
-    log_message(f"Multiplier: {get_multiplier()}x (hardcoded)")
+    log_message(f"Multiplier: {get_multiplier()}x (from .env)")
     log_message("="*60)
     
     # Show martingale calculation table
@@ -664,34 +674,69 @@ async def main():
 
 async def create_session_if_needed():
     """Create Telegram session if credentials are available"""
+    global STRING_SESSION
+    
     if not all([API_ID, API_HASH, PHONE_NUMBER]):
-        log_message("❌ Missing Telegram credentials in .env:")
+        log_message("❌ Missing Telegram credentials")
         log_message(f"   API_ID: {'SET' if API_ID else 'NOT SET'}")
         log_message(f"   API_HASH: {'SET' if API_HASH else 'NOT SET'}")
         log_message(f"   PHONE: {'SET' if PHONE_NUMBER else 'NOT SET'}")
-        log_message("Please set these in your .env file or frontend")
+        log_message("Please check credentials in main.py")
         return
     
     try:
-        log_message("📱 Creating new Telegram session...")
+        log_message("[PHONE] Creating new Telegram session...")
         log_message(f"   Phone: {PHONE_NUMBER}")
-        log_message(f"   API ID: {API_ID}")
         
-        # Create client for session creation
-        client = TelegramClient('po_vip_testing', API_ID, API_HASH)
+        # Create client for session creation (use unique session name)
+        import time
+        session_name = f'po_vip_testing_{int(time.time())}'
+        client = TelegramClient(session_name, API_ID, API_HASH)
         await client.connect()
         
         if not await client.is_user_authorized():
-            log_message("📲 Sending OTP code...")
+            log_message("[SMS] Sending OTP code...")
             result = await client.send_code_request(PHONE_NUMBER)
-            log_message(f"✅ OTP sent to {PHONE_NUMBER}")
-            log_message("🔢 Please use frontend to enter OTP code")
-            log_message("🌐 Open http://localhost:5000 to complete setup")
+            log_message(f"[OK] OTP sent to {PHONE_NUMBER}")
             
-            # Wait for OTP from frontend - don't use console input
-            log_message("⏳ Waiting for OTP verification from frontend...")
-            await client.disconnect()
-            return
+            # Check if we got phone_code_hash
+            if hasattr(result, 'phone_code_hash') and result.phone_code_hash:
+                log_message(f"[INFO] Phone code hash received: {result.phone_code_hash}")
+                log_message("[INPUT] Please enter OTP code manually:")
+            else:
+                log_message("[ERROR] Failed to get phone code hash from Telegram")
+                await client.disconnect()
+                return
+            
+            # Get OTP from console input
+            try:
+                import sys
+                print("Enter OTP code: ", end='', flush=True)
+                otp_code = sys.stdin.readline().strip()
+                if otp_code:
+                    log_message(f"[VERIFY] Verifying OTP: {otp_code}")
+                    log_message(f"[INFO] Using phone_code_hash: {result.phone_code_hash}")
+                    
+                    try:
+                        await client.sign_in(PHONE_NUMBER, otp_code, phone_code_hash=result.phone_code_hash)
+                        log_message("[OK] OTP verified successfully!")
+                    except Exception as sign_error:
+                        log_message(f"[ERROR] Sign in error: {sign_error}")
+                        log_message("[ERROR] OTP verification failed - please check the code")
+                        await client.disconnect()
+                        return
+                else:
+                    log_message("[ERROR] No OTP code entered")
+                    await client.disconnect()
+                    return
+            except KeyboardInterrupt:
+                log_message("[ERROR] OTP input cancelled")
+                await client.disconnect()
+                return
+            except Exception as e:
+                log_message(f"[ERROR] OTP verification failed: {e}")
+                await client.disconnect()
+                return
         else:
             log_message("✅ Already authorized - creating string session...")
             
@@ -699,93 +744,24 @@ async def create_session_if_needed():
         string_session = StringSession.save(client.session)
         
         # Set global variable directly
-        global STRING_SESSION
         STRING_SESSION = string_session
         
-        log_message("✅ String session created and set in memory")
+        log_message("[OK] String session created and saved to memory")
+        
+        # Clean up the temporary session file
+        try:
+            import os
+            if os.path.exists(session_name + '.session'):
+                os.remove(session_name + '.session')
+                log_message(f"[CLEAN] Cleaned up temporary session file: {session_name}.session")
+        except Exception as cleanup_error:
+            log_message(f"[WARNING] Could not clean up session file: {cleanup_error}")
+        
         await client.disconnect()
         
     except Exception as e:
-        log_message(f"❌ Session creation failed: {e}")
+        log_message(f"[ERROR] Session creation failed: {e}")
         log_message("Please check your credentials and try again")
-    
-    # Connect to ALL channels
-    channels = []
-    for channel_info in CHANNELS:
-        try:
-            # Try to get channel by ID first
-            if channel_info['id']:
-                try:
-                    channel = await client.get_entity(channel_info['id'])
-                    channels.append(channel)
-                    log_message(f"Connected to: {channel.title} (ID: {channel_info['id']})")
-                except Exception as e:
-                    # Try by username if ID fails
-                    if channel_info['username']:
-                        log_message(f"Failed by ID, trying username @{channel_info['username']}...")
-                        channel = await client.get_entity(channel_info['username'])
-                        channels.append(channel)
-                        log_message(f"Connected to: {channel.title}")
-                    else:
-                        log_message(f"Failed to connect to {channel_info['name']}: {e}")
-            elif channel_info['username']:
-                channel = await client.get_entity(channel_info['username'])
-                channels.append(channel)
-                log_message(f"✅ Connected to: {channel.title}")
-        except Exception as e:
-            log_message(f"Error connecting to {channel_info['name']}: {e}")
-    
-    if not channels:
-        log_message("Failed to connect to any channels")
-        return
-    
-    log_message(f"Monitoring {len(channels)} channel(s)")
-    
-    # Get recent messages from all channels (don't execute, just for context)
-    total_messages = 0
-    for channel in channels:
-        try:
-            recent_time = datetime.now() - timedelta(minutes=30)
-            messages = await client(GetHistoryRequest(
-                peer=channel,
-                limit=50,
-                offset_date=recent_time,
-                offset_id=0,
-                max_id=0,
-                min_id=0,
-                add_offset=0,
-                hash=0
-            ))
-            total_messages += len(messages.messages)
-        except Exception as e:
-            log_message(f"Could not get history from {channel.title}: {e}")
-    
-    log_message(f"Found {total_messages} recent messages across all channels")
-    
-    # Start cleanup task in background
-    asyncio.create_task(cleanup_stale_trades())
-    log_message("Started automatic stale trade cleanup (every 60s)")
-    
-    last_message_ids = {channel.id: 0 for channel in channels}
-    
-    # Listen for NEW messages from ALL channels
-    @client.on(events.NewMessage(chats=channels))
-    async def handle_new_message(event):
-        channel_title = event.chat.title if hasattr(event.chat, 'title') else 'Unknown'
-        
-        if event.message.id > last_message_ids.get(event.chat_id, 0):
-            last_message_ids[event.chat_id] = event.message.id
-            
-            log_message(f"\nNEW MESSAGE from [{channel_title}]: {event.message.message[:100]}")
-            
-            # Process message and place trade if signal is complete
-            await process_message(event.message.message)
-    
-    log_message("\nWaiting for signals from ALL channels...\n")
-    
-    # Keep alive
-    while True:
-        await asyncio.sleep(1)
 
 if __name__ == "__main__":
     try:

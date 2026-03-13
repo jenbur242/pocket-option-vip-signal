@@ -1,16 +1,16 @@
 # Pocket Option Trading Bot
 
-Automated trading bot for Pocket Option with Telegram signal integration and Flask API.
+Automated trading bot for Pocket Option with Telegram signal integration and modern web interface.
 
 ## Features
 
 - 🤖 Automated trading based on Telegram signals
 - 📊 Martingale strategy with customizable parameters
-- 🌐 Flask API server with REST endpoints
-- 💻 Beautiful web interface for bot management
-- 📈 Real-time trade monitoring and statistics
+- 🌐 Modern web dashboard with real-time updates
+- 📈 Live trade monitoring and performance charts
 - 🔄 Support for Demo and Real accounts
-- ☁️ Railway deployment ready
+- ☁️ Railway deployment ready with persistent storage
+- 💾 Automatic backups to Railway bucket storage
 
 ## Quick Start (Local)
 
@@ -21,76 +21,128 @@ pip install -r requirements.txt
 
 2. Start the API server:
 ```bash
-python api_server.py
+python api.py
 ```
 
-3. Open `frontend.html` in your browser
+3. Open your browser and navigate to:
+```
+http://localhost:5000
+```
 
-4. Configure SSID, Telegram credentials, and start trading!
+4. Use the web dashboard to start the bot and monitor trades!
 
 ## Railway Deployment 🚀
 
-**Why trades don't work on Railway:** Railway doesn't have your Telegram session file.
+### One-Click Deployment:
 
-**Solution:** Use string session (takes 2 minutes)
-
-### Quick Setup:
-
-1. **Generate string session:**
+1. **Push to GitHub:**
    ```bash
-   python generate_string_session.py
-   ```
-
-2. **Add to Railway variables:**
-   - Go to Railway Dashboard > Your Project > Variables
-   - Add `TELEGRAM_STRING_SESSION` with the generated value
-   - Add all other variables from `.env` file
-
-3. **Deploy:**
-   ```bash
+   git add .
+   git commit -m "Ready for Railway deployment"
    git push
    ```
 
-📖 **Full guide:** See [RAILWAY_DEPLOYMENT_GUIDE.md](RAILWAY_DEPLOYMENT_GUIDE.md)
+2. **Deploy on Railway:**
+   - Connect your GitHub repository to Railway
+   - Railway will automatically detect and deploy the app
+   - The web dashboard will be available at your Railway URL
 
-## Documentation
+### Environment Variables (Railway):
 
-- [Railway Deployment Guide](RAILWAY_DEPLOYMENT_GUIDE.md) - Deploy to Railway
-- [API Documentation](API_DOCUMENTATION.md) - Complete API reference
-- [Quick Start Guide](QUICK_START.md) - Detailed setup instructions
+Set these in Railway Dashboard > Variables:
+```
+TRADE_AMOUNT=5.0
+MULTIPLIER=2.5
+IS_DEMO=true
+INITIAL_BALANCE=10000.0
+```
+
+## Web Dashboard Features
+
+### 🎮 Bot Control
+- Start/Stop bot with one click
+- Real-time status monitoring
+- Connection status indicators
+
+### 📊 Trading Overview
+- Live balance display
+- Win rate statistics
+- Total trades counter
+- Last signal received
+
+### 📈 Performance Charts
+- Balance over time visualization
+- Trade history with results
+- Win/loss ratio tracking
+
+### 📋 Live Monitoring
+- Real-time trade updates
+- Live log streaming
+- Recent trades list
+- Automatic data refresh
+
+### 💾 Data Management
+- Create backups to Railway storage
+- Persistent log storage
+- Trade history in CSV format
+- Session file management
 
 ## API Endpoints
 
-- `POST /api/ssid` - Save SSID configuration
-- `POST /api/telegram/otp` - Configure Telegram credentials
-- `POST /api/trading/start` - Start trading bot
-- `POST /api/trading/stop` - Stop trading bot
-- `GET /api/trading/status` - Get current status
-- `GET /api/trades/results` - Get trade history
-- `GET /api/trades/upcoming` - Get scheduled trades
-- `GET /api/trades/analysis` - Get statistics
+- `GET /` - Web dashboard
+- `GET /status` - Bot status
+- `POST /start` - Start bot
+- `POST /stop` - Stop bot
+- `GET /trades` - Recent trades
+- `GET /balance` - Current balance
+- `GET /logs` - Live logs
+- `POST /backup` - Create backup
+- `GET /health` - Health check
 
 ## Configuration
 
-The bot accepts the following parameters:
+The bot uses environment variables for configuration:
 
-- **Initial Amount**: Base trade amount (e.g., $1.00)
-- **Multiplier**: Amount multiplier after each loss (e.g., 2.5x)
-- **Martingale Step**: Starting step (0 = fresh start, 1+ = resume)
-- **Account Type**: Demo or Real
+- **TRADE_AMOUNT**: Base trade amount (default: 5.0)
+- **MULTIPLIER**: Martingale multiplier (default: 2.5)
+- **IS_DEMO**: Use demo account (true/false)
+- **INITIAL_BALANCE**: Starting balance for tracking
 
-## Martingale Strategy
+## Storage Structure (Railway)
 
-The bot uses a martingale strategy where:
-- **Win**: Reset to Step 0
-- **Loss**: Advance to next step with multiplied amount
+```
+/tmp/
+├── logs/telegram/     # Trading logs
+├── sessions/          # Session backups
+├── csv/              # Trade history CSV
+└── trades/           # Trade data
+```
 
-Example with Initial=$1.00, Multiplier=2.5:
-- Step 0: $1.00
-- Step 1: $2.50
-- Step 2: $6.25
-- Step 3: $15.63
+## Frontend Design
+
+The web dashboard features:
+- **Modern UI**: Built with Tailwind CSS
+- **Responsive Design**: Works on all devices
+- **Real-time Updates**: Auto-refresh every 5 seconds
+- **Interactive Charts**: Chart.js for performance visualization
+- **Glass Morphism**: Modern frosted glass effects
+- **Dark Theme**: Easy on the eyes
+- **Smooth Animations**: Professional transitions
+
+## Railway Storage Integration
+
+- **Persistent Logs**: All logs stored in Railway bucket
+- **Automatic Backups**: Session and trade data backed up
+- **CSV Exports**: Trade history downloadable
+- **Session Management**: Telegram sessions stored safely
 
 ## Disclaimer
 
 ⚠️ This bot is for educational purposes. Trading involves risk. Always test with demo account first and never trade more than you can afford to lose.
+
+## Support
+
+For issues and questions:
+- Check the live logs in the web dashboard
+- Use the health check endpoint: `/health`
+- Review Railway deployment logs
