@@ -16,15 +16,26 @@ from datetime import datetime
 from flask import Flask, jsonify, request
 from flask_cors import CORS
 import logging
-from pathlib import Path
+import sys
 
 # Initialize Flask app
 app = Flask(__name__)
-CORS(app)
 
-# Configure logging
-logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+# Configure logging properly for Railway
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(levelname)s - %(message)s',
+    handlers=[
+        logging.StreamHandler(sys.stdout),
+        logging.StreamHandler(sys.stderr)
+    ]
+)
+
+# Get Railway logger
 logger = logging.getLogger(__name__)
+logger.setLevel(logging.INFO)
+
+CORS(app)
 
 # Global variables for bot status
 bot_status = {

@@ -35,7 +35,7 @@ SSID_REAL = '42["auth",{"session":"a:4:{s:10:\\"session_id\\";s:32:\\"2a8f01f1ef
 
 # Channel usernames and IDs - Monitor Pocket Option VIP Signals channel
 CHANNELS = [
-    {'username': 'Pocket_Option_Signals_Vip', 'id': None, 'name': 'Pocket Option Signals VIP'}
+    'Pocket_Option_Signals_Vip'  # Use username directly instead of dict
 ]
 
 # Trading configuration from .env
@@ -603,7 +603,7 @@ async def main():
     log_message("="*60)
     log_message(f"Channels: {len(CHANNELS)} channels")
     for ch in CHANNELS:
-        log_message(f"  - {ch['name']} (ID: {ch['id']})")
+        log_message(f"  - {ch} (monitoring)")
     log_message(f"Account: {'DEMO' if get_is_demo() else 'REAL'}")
     
     # Show configuration from .env
@@ -665,6 +665,27 @@ async def main():
         
         log_message("Telegram session authorized successfully")
         log_message("Ready to monitor trading signals")
+        
+        # Set up message handlers
+        from telethon import events
+        
+        @client.on(events.NewMessage(chats=CHANNELS))
+        async def handle_new_message(event):
+            """Handle new messages from channels"""
+            try:
+                message_text = event.message.message
+                if message_text:
+                    log_message(f"Received message: {message_text[:100]}...")
+                    await process_message(message_text)
+            except Exception as e:
+                log_message(f"Message handling error: {e}")
+        
+        # Start the client
+        await client.start()
+        log_message("Telegram client started - monitoring for signals...")
+        
+        # Keep the client running
+        await client.run_until_disconnected()
         
     except Exception as e:
         log_message(f"Telegram connection error: {e}")
