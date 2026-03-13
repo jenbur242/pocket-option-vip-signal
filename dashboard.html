@@ -46,7 +46,7 @@
     <!-- Main Content -->
     <main class="container mx-auto px-4 py-8">
         <!-- Status Cards -->
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6 mb-8">
             <!-- Bot Status Card -->
             <div class="bg-white rounded-xl shadow-md p-6">
                 <div class="flex items-center justify-between mb-4">
@@ -75,11 +75,25 @@
                 <p id="healthStatus" class="text-2xl font-bold text-gray-800">Checking...</p>
             </div>
 
-            <!-- Bot Task ID Card -->
+            <!-- Auto-start Status Card -->
             <div class="bg-white rounded-xl shadow-md p-6">
                 <div class="flex items-center justify-between mb-4">
                     <div class="bg-purple-100 p-3 rounded-lg">
-                        <i class="fas fa-fingerprint text-purple-600 text-xl"></i>
+                        <i class="fas fa-play-circle text-purple-600 text-xl"></i>
+                    </div>
+                    <span id="autostartIndicator" class="text-sm font-medium px-2 py-1 rounded-full bg-purple-100 text-purple-600">
+                        Enabled
+                    </span>
+                </div>
+                <h3 class="text-gray-500 text-sm font-medium">Auto-start</h3>
+                <p id="autostartStatus" class="text-2xl font-bold text-gray-800">Enabled</p>
+            </div>
+
+            <!-- Bot Task ID Card -->
+            <div class="bg-white rounded-xl shadow-md p-6">
+                <div class="flex items-center justify-between mb-4">
+                    <div class="bg-orange-100 p-3 rounded-lg">
+                        <i class="fas fa-fingerprint text-orange-600 text-xl"></i>
                     </div>
                 </div>
                 <h3 class="text-gray-500 text-sm font-medium">Task ID</h3>
@@ -89,8 +103,8 @@
             <!-- Last Update Card -->
             <div class="bg-white rounded-xl shadow-md p-6">
                 <div class="flex items-center justify-between mb-4">
-                    <div class="bg-orange-100 p-3 rounded-lg">
-                        <i class="fas fa-clock text-orange-600 text-xl"></i>
+                    <div class="bg-gray-100 p-3 rounded-lg">
+                        <i class="fas fa-clock text-gray-600 text-xl"></i>
                     </div>
                 </div>
                 <h3 class="text-gray-500 text-sm font-medium">Last Update</h3>
@@ -105,7 +119,7 @@
                 Bot Control Panel
             </h2>
             
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
                 <button onclick="startBot()" class="bg-green-500 hover:bg-green-600 text-white font-medium py-3 px-6 rounded-lg transition flex items-center justify-center space-x-2">
                     <i class="fas fa-play"></i>
                     <span>Start Bot</span>
@@ -119,6 +133,11 @@
                 <button onclick="restartBot()" class="bg-yellow-500 hover:bg-yellow-600 text-white font-medium py-3 px-6 rounded-lg transition flex items-center justify-center space-x-2">
                     <i class="fas fa-redo"></i>
                     <span>Restart Bot</span>
+                </button>
+                
+                <button onclick="toggleAutostart()" class="bg-purple-500 hover:bg-purple-600 text-white font-medium py-3 px-6 rounded-lg transition flex items-center justify-center space-x-2">
+                    <i class="fas fa-toggle-on"></i>
+                    <span>Toggle Auto-start</span>
                 </button>
             </div>
         </div>
@@ -211,7 +230,8 @@
             running: false,
             taskId: null,
             lastUpdate: null,
-            connectionStatus: 'offline'
+            connectionStatus: 'offline',
+            autostartEnabled: true
         };
 
         // Utility functions
@@ -338,6 +358,27 @@
             return null;
         }
 
+        async function loadAutostart() {
+            const result = await apiCall('/autostart');
+            if (result.success) {
+                const data = result.data;
+                botState.autostartEnabled = data.auto_start_enabled;
+                
+                // Update auto-start display
+                document.getElementById('autostartStatus').textContent = data.auto_start_enabled ? 'Enabled' : 'Disabled';
+                const indicator = document.getElementById('autostartIndicator');
+                if (data.auto_start_enabled) {
+                    indicator.className = 'text-sm font-medium px-2 py-1 rounded-full bg-purple-100 text-purple-600';
+                    indicator.textContent = 'Enabled';
+                } else {
+                    indicator.className = 'text-sm font-medium px-2 py-1 rounded-full bg-gray-100 text-gray-600';
+                    indicator.textContent = 'Disabled';
+                }
+                
+                log(`Auto-start status: ${data.auto_start_enabled ? 'Enabled' : 'Disabled'}`);
+            }
+        }
+
         async function loadStatus() {
             const result = await apiCall('/status');
             if (result.success) {
@@ -421,9 +462,38 @@
             }, 2000);
         }
 
+        async function toggleAutostart() {
+            log('Toggling auto-start...');
+            try {
+                const response = await fetch(`${API_BASE}/autostart`, { method: 'POST' });
+                const data = await response.json();
+                
+                if (response.ok) {
+                    botState.autostartEnabled = data.auto_start_enabled;
+                    
+                    // Update UI
+                    document.getElementById('autostartStatus').textContent = data.auto_start_enabled ? 'Enabled' : 'Disabled';
+                    const indicator = document.getElementById('autostartIndicator');
+                    if (data.auto_start_enabled) {
+                        indicator.className = 'text-sm font-medium px-2 py-1 rounded-full bg-purple-100 text-purple-600';
+                        indicator.textContent = 'Enabled';
+                    } else {
+                        indicator.className = 'text-sm font-medium px-2 py-1 rounded-full bg-gray-100 text-gray-600';
+                        indicator.textContent = 'Disabled';
+                    }
+                    
+                    log(`Auto-start ${data.auto_start_enabled ? 'enabled' : 'disabled'} successfully`, 'success');
+                } else {
+                    log(`Failed to toggle auto-start: ${data.message}`, 'error');
+                }
+            } catch (error) {
+                log(`Error toggling auto-start: ${error.message}`, 'error');
+            }
+        }
+
         async function refreshAll() {
             log('Refreshing all data...');
-            await Promise.all([loadRoot(), loadStatus(), loadHealth()]);
+            await Promise.all([loadRoot(), loadStatus(), loadHealth(), loadAutostart()]);
             log('Data refreshed', 'success');
         }
 
@@ -431,7 +501,7 @@
         function startAutoRefresh() {
             setInterval(async () => {
                 if (botState.connectionStatus === 'online') {
-                    await Promise.all([loadRoot(), loadStatus(), loadHealth()]);
+                    await Promise.all([loadRoot(), loadStatus(), loadHealth(), loadAutostart()]);
                 }
             }, 10000); // Refresh every 10 seconds
         }
@@ -441,7 +511,7 @@
             log('Initializing dashboard...');
             
             // Load initial data
-            await Promise.all([loadRoot(), loadStatus(), loadHealth()]);
+            await Promise.all([loadRoot(), loadStatus(), loadHealth(), loadAutostart()]);
             
             // Start auto-refresh
             startAutoRefresh();

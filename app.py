@@ -20,6 +20,29 @@ app.add_middleware(
 
 # Global bot task
 bot_task = None
+auto_start_enabled = True  # Set to False to disable auto-start
+
+@app.on_event("startup")
+async def startup_event():
+    """Auto-start bot when server starts"""
+    if auto_start_enabled:
+        log_message("Auto-starting bot on server startup...")
+        try:
+            from main import main as bot_main
+            bot_task = asyncio.create_task(bot_main())
+            log_message(f"Bot auto-started successfully with task ID: {id(bot_task)}")
+        except Exception as e:
+            log_message(f"Failed to auto-start bot: {str(e)}")
+    else:
+        log_message("Auto-start is disabled")
+
+@app.on_event("shutdown")
+async def shutdown_event():
+    """Clean up on server shutdown"""
+    log_message("Server shutting down...")
+    if bot_task and not bot_task.done():
+        bot_task.cancel()
+        log_message("Bot task cancelled")
 
 # Exception handlers
 @app.exception_handler(RequestValidationError)
@@ -69,7 +92,27 @@ async def test_endpoint():
         "message": "API is working correctly",
         "timestamp": datetime.now().isoformat(),
         "bot_task_exists": bot_task is not None,
-        "bot_task_done": bot_task.done() if bot_task else None
+        "bot_task_done": bot_task.done() if bot_task else None,
+        "auto_start_enabled": auto_start_enabled
+    }
+
+@app.get("/autostart")
+async def get_autostart():
+    """Get auto-start status"""
+    return {
+        "auto_start_enabled": auto_start_enabled,
+        "message": "Auto-start is " + ("enabled" if auto_start_enabled else "disabled")
+    }
+
+@app.post("/autostart")
+async def toggle_autostart():
+    """Toggle auto-start on/off"""
+    global auto_start_enabled
+    auto_start_enabled = not auto_start_enabled
+    log_message(f"Auto-start {'enabled' if auto_start_enabled else 'disabled'} via API")
+    return {
+        "auto_start_enabled": auto_start_enabled,
+        "message": f"Auto-start {'enabled' if auto_start_enabled else 'disabled'} successfully"
     }
 
 @app.get("/health")
