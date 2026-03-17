@@ -4,6 +4,7 @@ python-dotenv
 telethon
 websockets
 pandas
+loguru
 
 # Optional: TgCrypto for better performance (may fail to build on Railway)
 # tgcrypto

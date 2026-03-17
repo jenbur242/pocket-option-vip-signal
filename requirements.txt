@@ -4,6 +4,7 @@ telethon
 aiohttp
 websockets
 pandas
+loguru
 
 # Additional dependencies
 pathlib2
