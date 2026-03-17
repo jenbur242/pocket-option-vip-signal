@@ -1415,3 +1415,42 @@ AUDUSD B🔼 2 minut...
 2026-03-17 15:56:56 | Ready to monitor trading signals
 2026-03-17 15:56:56 | Telegram client started - monitoring for signals...
 2026-03-17 15:59:31 | Received message: B...
+2026-03-17 16:02:56 | Received message: EURCHF...
+2026-03-17 16:02:56 | Signal received: EURCHF - 2 min
+2026-03-17 16:02:56 | Received message: S...
+2026-03-17 16:02:56 | Direction received: SELL
+2026-03-17 16:02:56 | Client connected successfully: <pocketoptionapi_async.client.AsyncPocketOptionClient object at 0x0000026BDB896A50>
+2026-03-17 16:02:56 | Client is connected: True
+2026-03-17 16:02:56 | 
+============================================================
+2026-03-17 16:02:56 | TRADE AMOUNT CALCULATION - STEP 0
+2026-03-17 16:02:56 | ============================================================
+2026-03-17 16:02:56 | Base Amount: $5.00
+2026-03-17 16:02:56 | Multiplier: 2.5x
+2026-03-17 16:02:56 | Current Martingale Step: 0
+2026-03-17 16:02:56 | Formula: $5.00 × (2.5^0)
+2026-03-17 16:02:56 | FINAL TRADE AMOUNT: $5.00
+2026-03-17 16:02:56 | ============================================================
+
+2026-03-17 16:02:56 | 
+============================================================
+2026-03-17 16:02:56 | PLACING TRADE
+2026-03-17 16:02:56 | ============================================================
+2026-03-17 16:02:56 | Asset: EURCHF
+2026-03-17 16:02:56 | Direction: SELL
+2026-03-17 16:02:56 | Amount: $5.00
+2026-03-17 16:02:56 | Duration: 2 min
+2026-03-17 16:02:56 | Martingale Step: 0
+2026-03-17 16:02:56 | ============================================================
+2026-03-17 16:02:56 | Attempting to place order with parameters:
+2026-03-17 16:02:56 |   Asset: EURCHF
+2026-03-17 16:02:56 |   Amount: $5.00
+2026-03-17 16:02:56 |   Direction: OrderDirection.PUT
+2026-03-17 16:02:56 |   Duration: 120s
+2026-03-17 16:02:56 | Order placed, result: order_id='11e02d91-7f90-4796-8978-493c68b70b46' asset='EURCHF' amount=5.0 direction=<OrderDirection.PUT: 'put'> duration=60 status=<OrderStatus.ACTIVE: 'active'> placed_at=datetime.datetime(2026, 3, 17, 16, 2, 56, 462548) expires_at=datetime.datetime(2026, 3, 17, 16, 3, 56, 462555) profit=4.5 payout=None error_message=None
+2026-03-17 16:02:56 | Order placed successfully!
+2026-03-17 16:02:56 |    Order ID: 11e02d91-7f90-4796-8978-493c68b70b46
+2026-03-17 16:02:56 |    Status: active
+2026-03-17 16:02:56 |    Placed at: 16:02:56
+2026-03-17 16:02:56 |    Expires at: 16:03:56
+2026-03-17 16:02:56 | Waiting for trade 11e02d91-7f90-4796-8978-493c68b70b46 result (max 150s)...
