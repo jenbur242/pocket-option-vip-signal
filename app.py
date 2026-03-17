@@ -63,15 +63,22 @@ async def general_exception_handler(request, exc):
 async def root():
     """Serve dashboard HTML or return API info"""
     dashboard_path = "dashboard.html"
-    if os.path.exists(dashboard_path):
-        return FileResponse(dashboard_path, media_type="text/html")
     
-    # Fallback to JSON if dashboard doesn't exist
+    # Check if dashboard exists and is readable
+    try:
+        if os.path.exists(dashboard_path) and os.path.getsize(dashboard_path) > 0:
+            return FileResponse(dashboard_path, media_type="text/html")
+    except Exception as e:
+        print(f"Error accessing dashboard: {e}")
+    
+    # Fallback to JSON if dashboard doesn't exist or has issues
     return {
         "status": "running", 
-        "message": "Pocket Option Trading Bot on Railway",
+        "message": "Pocket Option Trading Bot API",
+        "version": "1.0.0",
         "timestamp": datetime.now().isoformat(),
-        "environment": "railway"
+        "environment": "railway",
+        "note": "Dashboard not available - using JSON endpoint"
     }
 
 @app.get("/api")
@@ -117,10 +124,12 @@ async def toggle_autostart():
 
 @app.get("/health")
 async def health():
+    """Health check endpoint - always returns success"""
     return {
         "status": "healthy",
         "timestamp": datetime.now().isoformat(),
-        "bot_running": bot_task is not None and not bot_task.done()
+        "bot_running": bot_task is not None and not bot_task.done(),
+        "service": "pocket-option-trading-bot"
     }
 
 def log_message(message: str):

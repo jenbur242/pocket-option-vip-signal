@@ -13,25 +13,11 @@ from telethon import events
 from datetime import datetime, timedelta
 from typing import Dict
 
-# Railway deployment fixes
-try:
-    # Set up environment for Railway
-    os.environ.setdefault('PYTHONIOENCODING', 'utf-8')
-    os.environ.setdefault('PYTHONUNBUFFERED', '1')
-    
-    # Create necessary directories for Railway
-    railway_dirs = ['/tmp/logs', '/tmp/csv', 'telegram/logs', 'telegram/trades']
-    for dir_path in railway_dirs:
-        Path(dir_path).mkdir(parents=True, exist_ok=True)
-        
-except Exception as e:
-    print(f"Setup warning: {e}")
-
 # Load environment variables
 load_dotenv()
 
 # Add parent directory to Python path for imports
-sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
 # Import PocketOption API
 try:
@@ -41,26 +27,34 @@ except ImportError as e:
     print(f"PocketOption API import error: {e}")
     sys.exit(1)
 
-# Hardcoded credentials (directly in Python file)
-API_ID = '34506083'
-API_HASH = '5676893fa1c0fe15eca5dbbceb3ab6a2'
-PHONE_NUMBER = '+12428018500'
-STRING_SESSION = '1AZWarzkBuyPe9BnmmNJBJyG0R4fb9EItkxpNvjV6sNBiMjN-gK1hkjz9XpBkxFV92uT_Yxj2I_ZKFzJ0d8GWj9DkicZXiFSSqips6XmXzzVscklLd2pZb4k6ctz6LTE6z8b_uUgRpEZzectHQpSEq5BreaiSin9OYbpBAiHm1CGlf8KUWZVVz7nzlnlzPq54u7pQY44Q8I6DGiFJN9_ay3K883tv1xB9SZ1jJsB_BYeovtN2tqchrWTfyc4pX5rT7nlK3js3ZhQRNhuNXQXBHWFubLIKYaelQq7pONm4ZUyMCnxYNP6a_CaEG1ByCf36OunherYkP5KNoydmTNds3lD6-1h1hGQ='
-
-# Hardcoded SSIDs
-SSID_DEMO = '42["auth",{"session":"8kmju1f41cibg1vg5pihe37d7u","isDemo":1,"uid":116040367,"platform":2,"isFastHistory":true,"isOptimized":true}]'
-SSID_REAL = '42["auth",{"session":"a:4:{s:10:\\"session_id\\";s:32:\\"2a8f01f1efeca20cc174c1b75eb6156a\\";s:10:\\"ip_address\\";s:14:\\"172.86.107.247\\";s:10:\\"user_agent\\";s:111:\\"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.36\\";s:13:\\"last_activity\\";i:1772807404;}3fed45de8f1ed072a8cabf7a07571f05","isDemo":0,"uid":116040367,"platform":2,"isFastHistory":true,"isOptimized":true}]'
-
 # Channel usernames and IDs - Monitor Pocket Option VIP Signals channel
 CHANNELS = [
     'Pocket_Option_Signals_Vip'  # Use username directly instead of dict
 ]
 
-# Trading configuration from .env
+# Telegram Credentials - Hardcoded values
+API_ID = 34506083
+API_HASH = '5676893fa1c0fe15eca5dbbceb3ab6a2'
+PHONE_NUMBER = '+12428018500'
+STRING_SESSION = '1AZWarzkBuyPe9BnmmNJBJyG0R4fb9EItkxpNvjV6sNBiMjN-gK1hkjz9XpBkxFV92uT_Yxj2I_ZKFzJ0d8GWj9DkicZXiFSSqips6XmXzzVscklLd2pZb4k6ctz6LTE6z8b_uUgRpEZzectHQpSEq5BreaiSin9OYbpBAiHm1CGlf8KUWZVVz7nzlnlzPq54u7pQY44Q8I6DGiFJN9_ay3K883tv1xB9SZ1jJsB_BYeovtN2tqchrWTfyc4pX5rT7nlK3js3ZhQRNhuNXQXBHWFubLIKYaelQq7pONm4ZUyMCnxYNP6a_CaEG1ByCf36OunherYkP5KNoydmTNds3lD6-1h1hGQ='
+
+# PocketOption SSIDs - Hardcoded values
+SSID_DEMO = '42["auth",{"session":"8kmju1f41cibg1vg5pihe37d7u","isDemo":1,"uid":116040367,"platform":2,"isFastHistory":true,"isOptimized":true}]'
+SSID_REAL = '42["auth",{"session":"a:4:{s:10:\"session_id\";s:32:\"2a8f01f1efeca20cc174c1b75eb6156a\";s:10:\"ip_address\";s:14:\"172.86.107.247\";s:10:\"user_agent\";s:111:\"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.36\";s:13:\"last_activity\";i:1772807404;}3fed45de8f1ed072a8cabf7a07571f05","isDemo":0,"uid":116040367,"platform":2,"isFastHistory":true,"isOptimized":true}]'
+
+# Trading configuration - Load from .env
 TRADE_AMOUNT = float(os.getenv('TRADE_AMOUNT', '5.0'))
 MULTIPLIER = float(os.getenv('MULTIPLIER', '2.5'))
 IS_DEMO = os.getenv('IS_DEMO', 'true').lower() == 'true'
 INITIAL_BALANCE = float(os.getenv('INITIAL_BALANCE', '10000.0'))
+
+# Bot configuration - Hardcoded values
+AUTO_START = False
+BOT_ENABLED = True
+LOG_LEVEL = 'INFO'
+
+CONFIG_LOADED = True
+print("[CONFIG] Configuration loaded - Telegram hardcoded, trading from .env")
 
 def get_trade_amount():
     """Get current trade amount - from .env"""
@@ -657,7 +651,7 @@ async def main():
         log_message(f"  - {ch} (monitoring)")
     log_message(f"Account: {'DEMO' if get_is_demo() else 'REAL'}")
     
-    # Show configuration from .env
+    # Show configuration - Telegram hardcoded, trading from .env
     trade_amount_parsed = get_trade_amount()
     log_message(f"Trade Amount: ${trade_amount_parsed} (from .env)")
     log_message(f"Default Duration: 2 minutes (if not specified in signal)")
