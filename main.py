@@ -367,7 +367,15 @@ async def place_trade(asset: str, direction: str, duration: int):
                 return
         
         # Get client
-        client = await get_persistent_client()
+        try:
+            client = await get_persistent_client()
+            log_message(f"Client connected successfully: {client}")
+            log_message(f"Client is connected: {client.is_connected}")
+        except Exception as client_error:
+            log_message(f"Failed to get client: {client_error}")
+            import traceback
+            traceback.print_exc()
+            return
         
         # Map asset name
         asset_name = map_asset_name(asset)
@@ -404,12 +412,27 @@ async def place_trade(asset: str, direction: str, duration: int):
         log_message(f"{'='*60}")
         
         # Place order - EXACT SAME AS test_trade.py
-        order_result = await client.place_order(
-            asset=asset_name,
-            amount=current_amount,
-            direction=order_direction,
-            duration=duration_minutes * 60
-        )
+        try:
+            log_message(f"Attempting to place order with parameters:")
+            log_message(f"  Asset: {asset_name}")
+            log_message(f"  Amount: ${current_amount:.2f}")
+            log_message(f"  Direction: {order_direction}")
+            log_message(f"  Duration: {duration_minutes * 60}s")
+            
+            order_result = await client.place_order(
+                asset=asset_name,
+                amount=current_amount,
+                direction=order_direction,
+                duration=duration_minutes * 60
+            )
+            
+            log_message(f"Order placed, result: {order_result}")
+            
+        except Exception as place_error:
+            log_message(f"Exception during place_order: {place_error}")
+            import traceback
+            traceback.print_exc()
+            return
         
         if order_result and order_result.status in [OrderStatus.ACTIVE, OrderStatus.PENDING]:
             log_message(f"Order placed successfully!")
@@ -438,6 +461,10 @@ async def place_trade(asset: str, direction: str, duration: int):
         else:
             error_msg = order_result.error_message if order_result and order_result.error_message else 'Unknown error'
             log_message(f"Trade failed: {error_msg}")
+            log_message(f"Order result: {order_result}")
+            log_message(f"Order result type: {type(order_result)}")
+            if hasattr(order_result, '__dict__'):
+                log_message(f"Order result attributes: {order_result.__dict__}")
             
     except Exception as e:
         log_message(f"Error placing trade: {e}")
