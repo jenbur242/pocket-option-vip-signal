@@ -5,6 +5,7 @@ aiohttp
 websockets
 pandas
 loguru
+pydantic
 
 # Additional dependencies
 pathlib2

@@ -5,6 +5,7 @@ telethon
 websockets
 pandas
 loguru
+pydantic
 
 # Optional: TgCrypto for better performance (may fail to build on Railway)
 # tgcrypto
