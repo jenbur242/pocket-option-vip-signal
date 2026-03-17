@@ -1,12 +1,13 @@
 # Core dependencies for Telegram bot
-python-dotenv==1.0.0
-telethon==1.42.0
-aiohttp==3.9.1
-websockets==12.0
+python-dotenv
+telethon
+aiohttp
+websockets
+pandas
 
 # Additional dependencies
-pathlib2==2.3.7
-python-dateutil==2.8.2
+pathlib2
+python-dateutil
 
 # Optional: TgCrypto for better performance (may fail to build on Railway)
-# tgcrypto==1.2.5
+# tgcrypto

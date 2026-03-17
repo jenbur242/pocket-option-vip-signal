@@ -3,6 +3,7 @@ aiohttp
 python-dotenv
 telethon
 websockets
+pandas
 
 # Optional: TgCrypto for better performance (may fail to build on Railway)
 # tgcrypto
